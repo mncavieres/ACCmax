@@ -1,0 +1,112 @@
+{
+  "license": "CC BY 4.0",
+  "type": "published-figure-crops",
+  "sources": {
+    "anterior_tibial": {
+      "file": "anterior_tibial_eecp_figure2.webp",
+      "url": "https://www.frontiersin.org/files/Articles/795697/xml-images/fcvm-08-795697-g0002.webp",
+      "article": "https://doi.org/10.3389/fcvm.2021.795697",
+      "citation": "Zhang et al., Frontiers in Cardiovascular Medicine 8:795697 (2021), Figure 2",
+      "artery": "Human anterior tibial artery",
+      "expected_size": [
+        1535,
+        1749
+      ],
+      "expected_sha256": "ea06302d7cd0da330766d473794dbd39bca390fc1d6b28e70de990bb02f889dc",
+      "crops": [
+        {
+          "file": "anterior_tibial_baseline.png",
+          "source_box_xyxy": [
+            0,
+            0,
+            1535,
+            378
+          ],
+          "dimensions": [
+            1535,
+            378
+          ]
+        },
+        {
+          "file": "anterior_tibial_eecp_3.png",
+          "source_box_xyxy": [
+            0,
+            378,
+            1535,
+            867
+          ],
+          "dimensions": [
+            1535,
+            489
+          ]
+        },
+        {
+          "file": "anterior_tibial_eecp_1.png",
+          "source_box_xyxy": [
+            0,
+            867,
+            1535,
+            1292
+          ],
+          "dimensions": [
+            1535,
+            425
+          ]
+        },
+        {
+          "file": "anterior_tibial_eecp_2.png",
+          "source_box_xyxy": [
+            0,
+            1292,
+            1535,
+            1749
+          ],
+          "dimensions": [
+            1535,
+            457
+          ]
+        }
+      ]
+    },
+    "brachial": {
+      "file": "brachial_eecp_figure2.webp",
+      "url": "https://www.frontiersin.org/files/Articles/721140/xml-images/fcvm-08-721140-g0002.webp",
+      "article": "https://doi.org/10.3389/fcvm.2021.721140",
+      "citation": "Zhang et al., Frontiers in Cardiovascular Medicine 8:721140 (2021), Figure 2",
+      "artery": "Human right brachial artery",
+      "expected_size": [
+        945,
+        1321
+      ],
+      "expected_sha256": "5c9acc7c2e9cc0372cedac3416c2311b369568e5e817c3dc2b1cd3aca0deb3b9",
+      "crops": [
+        {
+          "file": "brachial_before_eecp.png",
+          "source_box_xyxy": [
+            5,
+            378,
+            945,
+            658
+          ],
+          "dimensions": [
+            940,
+            280
+          ]
+        },
+        {
+          "file": "brachial_during_eecp.png",
+          "source_box_xyxy": [
+            5,
+            1024,
+            945,
+            1321
+          ],
+          "dimensions": [
+            940,
+            297
+          ]
+        }
+      ]
+    }
+  }
+}

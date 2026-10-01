@@ -1,0 +1,27 @@
+{
+  "source_doi": "10.17632/7g2p7t9tzt.1",
+  "source_url": "https://data.mendeley.com/datasets/7g2p7t9tzt/1",
+  "license": "CC BY 4.0",
+  "sha256": "eec1bb7a676802c2705d656738707151e677b14e0c3c1fe4e91aaa35264362b6",
+  "video_bytes": 24826889,
+  "video_duration_s": 10.377033,
+  "video_frame_rate": "60000/1001",
+  "video_frame_count": 622,
+  "sampled_frames": 42,
+  "approximate_calibration": {
+    "zero_velocity_y_pixel": 982,
+    "minus_286_mm_s_y_pixel": 726,
+    "time_pixels_per_second": 1380.0,
+    "ultrasound_seconds_per_video_second": 0.8534
+  },
+  "sample_peak_times_s": [
+    0.522,
+    1.717,
+    2.734,
+    3.966,
+    5.043,
+    6.23,
+    7.522,
+    8.691
+  ]
+}

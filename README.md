@@ -1,15 +1,19 @@
-# ACCmax waveform test data
+# Human limb artery Doppler examples for ACCmax algorithms
 
-Public Doppler recordings, plots, and reproducible plotting scripts for exploring automatic maximal systolic acceleration (ACCmax) measurement.
+Public arterial Doppler material from human limbs, with plots and reproducible processing scripts for exploring automatic maximal systolic acceleration (ACCmax) measurement.
 
-The source recordings are distributed as assets of the repository's [`datasets-v1` release](https://github.com/mncavieres/ACCmax/releases/tag/datasets-v1), while plots, scripts, checksums, and provenance are tracked here. This keeps large binary files out of Git history. The datasets cover a finger artery, an aortic flow phantom, and fetal pulsed-wave Doppler. They support algorithm development, but none is a clinical tibial or pedal PAD validation cohort with expert ACCmax labels.
+The full source video is attached to the repository's [`datasets-v1` release](https://github.com/mncavieres/ACCmax/releases/tag/datasets-v1). Smaller published figures, their spectral crops, plots, checksums, and provenance are tracked in Git.
 
-| Source | Recordings | Licence |
+| Source | Included material | Best use |
 | --- | --- | --- |
-| [Proper volar digital artery](https://data.mendeley.com/datasets/7g2p7t9tzt/1) | 10-second pulsed-wave Doppler MP4 from one healthy volunteer | CC BY 4.0 |
-| [Aortic flow phantom](https://figshare.com/articles/dataset/Datasets_for_Blood_speckle_imaging_compared_with_conventional_Doppler_ultrasound_for_transvalvular_pressure_drop_estimation_in_an_aortic_flow_phantom/20237469) | Pulsatile and constant-flow Doppler DICOM recordings, with related measurements | CC BY 4.0 |
-| [NInFEA](https://physionet.org/content/ninfea/1.0.0/) | 60 fetal pulsed-wave Doppler bitmap traces with related electrophysiological data and processing code | Open Data Commons Attribution License v1.0 |
+| [Human finger artery, Mendeley Data](https://doi.org/10.17632/7g2p7t9tzt.1) | One ~10-second pulsed-wave Doppler video, an approximate digitized envelope, and two plots | Development on a continuous recording |
+| [Human anterior tibial artery, Zhang et al.](https://doi.org/10.3389/fcvm.2021.795697) | Four spectral-image crops: baseline and three counterpulsation settings | Visual envelope and beat-detection checks |
+| [Human brachial artery, Zhang et al.](https://doi.org/10.3389/fcvm.2021.721140) | Two pulsed-wave spectral-image crops: before and during counterpulsation | Visual checks with an inverted display |
 
-ACCmax is the steepest systolic velocity rise divided by elapsed time. A physically meaningful result in m/s² requires both velocity and time calibration, and care with Doppler sign and angle correction. The plots here are exploratory views of the source data; they are not reference ACCmax measurements.
+ACCmax is the steepest slope of the systolic velocity upstroke. A physically meaningful result in m/s² requires verified velocity and time calibration, with attention to Doppler sign and angle correction. The published figure crops lack independently verified pixel-to-time calibration, and none of these sources provide expert ACCmax labels or a clinical peripheral arterial disease validation cohort.
 
-See `data/README.md` for file manifests, checksums, and source attribution, and `scripts/README.md` for plot reproduction instructions.
+The original materials are credited under their [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) licenses. See the [video provenance and checksum](data/README.md), [figure provenance and panel map](figures/README.md), and [video plot reproduction instructions](scripts/README.md).
+
+![Digitized spectral envelope of a human finger artery](plots/finger/finger_recording_envelope.png)
+
+![Published human tibial and brachial artery spectral displays](figures/plots/human_limb_spectral_overview.png)
