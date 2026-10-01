@@ -1,0 +1,287 @@
+{
+  "generated": "2026-10-01T19:23:30.433Z",
+  "settings": {
+    "spanMs": 20,
+    "onsetMethod": "tangent",
+    "bandwidthMs": 5,
+    "bandwidthPerAT": 0.15,
+    "minCorr": 0.85
+  },
+  "note": "Real cases have no expert ACCmax labels; m/s² values from them are not clinical measurements. Image cases use a provisional calibration.",
+  "cases": [
+    {
+      "id": "finger",
+      "group": "real",
+      "title": "Finger: proper volar digital artery",
+      "calibration": "Approximate: printed 0 and −286 mm/s marks and 0.1 s ticks (data/finger/finger_metadata.json)",
+      "ok": true,
+      "hr_bpm": 51.5523,
+      "displayedHr_bpm": null,
+      "beats": "8/9",
+      "accmax_m_s2": 7.1298,
+      "accmax68": [
+        6.781,
+        7.5031
+      ],
+      "at_ms": 44.5771,
+      "at68_ms": [
+        42.0731,
+        47.2677
+      ],
+      "psv_cm_s": 25.6155,
+      "accmax_display_px_per_px": null,
+      "truth": null,
+      "qc": [
+        "info: Removed 149 isolated one-sample dropouts from the envelope (1.6% of samples)."
+      ]
+    },
+    {
+      "id": "anterior_tibial_baseline",
+      "group": "real",
+      "title": "Anterior tibial artery, baseline",
+      "calibration": "Provisional, from the scanner overlay: 3.57 px per cm/s, 39.066 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "ok": true,
+      "hr_bpm": 57.3151,
+      "displayedHr_bpm": 58,
+      "beats": "3/4",
+      "accmax_m_s2": 6.1561,
+      "accmax68": [
+        5.7863,
+        6.6085
+      ],
+      "at_ms": 116.0656,
+      "at68_ms": [
+        112.6356,
+        118.3918
+      ],
+      "psv_cm_s": 57.3267,
+      "accmax_display_px_per_px": 5.6257,
+      "truth": null,
+      "qc": []
+    },
+    {
+      "id": "anterior_tibial_eecp_1",
+      "group": "real",
+      "title": "Anterior tibial artery, EECP-1",
+      "calibration": "Provisional, from the scanner overlay: 2.6375 px per cm/s, 41.144 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "ok": true,
+      "hr_bpm": 60.0091,
+      "displayedHr_bpm": 63,
+      "beats": "3/4",
+      "accmax_m_s2": 31.28,
+      "accmax68": [
+        30.4009,
+        32.1099
+      ],
+      "at_ms": 87.331,
+      "at68_ms": [
+        85.8466,
+        90.9335
+      ],
+      "psv_cm_s": 68.0512,
+      "accmax_display_px_per_px": 20.052,
+      "truth": null,
+      "qc": []
+    },
+    {
+      "id": "anterior_tibial_eecp_2",
+      "group": "real",
+      "title": "Anterior tibial artery, EECP-2",
+      "calibration": "Provisional, from the scanner overlay: 1.9167 px per cm/s, 41.584 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "ok": true,
+      "hr_bpm": 58.6723,
+      "displayedHr_bpm": 61,
+      "beats": "2/4",
+      "accmax_m_s2": 34.2772,
+      "accmax68": null,
+      "at_ms": 81.8684,
+      "at68_ms": null,
+      "psv_cm_s": 77.8715,
+      "accmax_display_px_per_px": 15.7988,
+      "truth": null,
+      "qc": [
+        "warn: Only 2 beats stacked. Uncertainty cannot be estimated; record more cardiac cycles if possible."
+      ]
+    },
+    {
+      "id": "anterior_tibial_eecp_3",
+      "group": "real",
+      "title": "Anterior tibial artery, EECP-3",
+      "calibration": "Provisional, from the scanner overlay: 1.9633 px per cm/s, 42.627 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "ok": true,
+      "hr_bpm": 59.699,
+      "displayedHr_bpm": 63,
+      "beats": "2/4",
+      "accmax_m_s2": 52.9319,
+      "accmax68": null,
+      "at_ms": 57.1535,
+      "at68_ms": null,
+      "psv_cm_s": 122.2072,
+      "accmax_display_px_per_px": 24.3793,
+      "truth": null,
+      "qc": [
+        "warn: Only 2 beats stacked. Uncertainty cannot be estimated; record more cardiac cycles if possible."
+      ]
+    },
+    {
+      "id": "brachial_before_eecp",
+      "group": "real",
+      "title": "Brachial artery, before EECP",
+      "calibration": "Provisional, from the scanner overlay: 1.1689 px per cm/s, 171.45 px per s (dotted lines taken as 1 s apart). See figures/calibration.json",
+      "ok": true,
+      "hr_bpm": 68.802,
+      "displayedHr_bpm": null,
+      "beats": "5/5",
+      "accmax_m_s2": 22.0878,
+      "accmax68": [
+        21.3141,
+        22.9506
+      ],
+      "at_ms": 75.4869,
+      "at68_ms": [
+        74.7417,
+        76.4364
+      ],
+      "psv_cm_s": 117.9598,
+      "accmax_display_px_per_px": 15.059,
+      "truth": null,
+      "qc": []
+    },
+    {
+      "id": "brachial_during_eecp",
+      "group": "real",
+      "title": "Brachial artery, during EECP",
+      "calibration": "Provisional, from the scanner overlay: 1.1657 px per cm/s, 173.09 px per s (dotted lines taken as 1 s apart). See figures/calibration.json",
+      "ok": true,
+      "hr_bpm": 75.6015,
+      "displayedHr_bpm": null,
+      "beats": "6/6",
+      "accmax_m_s2": 23.4097,
+      "accmax68": [
+        22.0365,
+        24.6779
+      ],
+      "at_ms": 95.7489,
+      "at68_ms": [
+        94.5482,
+        97.6819
+      ],
+      "psv_cm_s": 119.5766,
+      "accmax_display_px_per_px": 15.7658,
+      "truth": null,
+      "qc": []
+    },
+    {
+      "id": "sim_triphasic",
+      "group": "simulated",
+      "title": "Simulated triphasic waveform",
+      "calibration": "Exact (synthetic)",
+      "ok": true,
+      "hr_bpm": 65.6158,
+      "displayedHr_bpm": null,
+      "beats": "6/7",
+      "accmax_m_s2": 8.0686,
+      "accmax68": [
+        7.5551,
+        8.5851
+      ],
+      "at_ms": 96.6046,
+      "at68_ms": [
+        92.9021,
+        98.6872
+      ],
+      "psv_cm_s": 55.859,
+      "accmax_display_px_per_px": null,
+      "truth": {
+        "accmax_m_s2": 8.1658,
+        "at_ms": 94.2921,
+        "amplitudeScale": 1.0095
+      },
+      "qc": []
+    },
+    {
+      "id": "sim_monophasic",
+      "group": "simulated",
+      "title": "Simulated monophasic waveform",
+      "calibration": "Exact (synthetic)",
+      "ok": true,
+      "hr_bpm": 72.8745,
+      "displayedHr_bpm": null,
+      "beats": "9/11",
+      "accmax_m_s2": 1.1956,
+      "accmax68": [
+        1.1577,
+        1.2356
+      ],
+      "at_ms": 136.0742,
+      "at68_ms": [
+        129.949,
+        142.3853
+      ],
+      "psv_cm_s": 13.3556,
+      "accmax_display_px_per_px": null,
+      "truth": {
+        "accmax_m_s2": 1.1907,
+        "at_ms": 137.6627,
+        "amplitudeScale": 1.0001
+      },
+      "qc": []
+    },
+    {
+      "id": "sim_irregular",
+      "group": "simulated",
+      "title": "Simulated triphasic, irregular rhythm",
+      "calibration": "Exact (synthetic)",
+      "ok": true,
+      "hr_bpm": 81.9095,
+      "displayedHr_bpm": null,
+      "beats": "10/12",
+      "accmax_m_s2": 7.8452,
+      "accmax68": [
+        7.6989,
+        8.046
+      ],
+      "at_ms": 97.46,
+      "at68_ms": [
+        95.2015,
+        100.1653
+      ],
+      "psv_cm_s": 55.0465,
+      "accmax_display_px_per_px": null,
+      "truth": {
+        "accmax_m_s2": 8.0594,
+        "at_ms": 94.2919,
+        "amplitudeScale": 0.9963
+      },
+      "qc": []
+    },
+    {
+      "id": "sim_screen",
+      "group": "simulated",
+      "title": "Simulated spectral display (image path)",
+      "calibration": "Exact (synthetic display)",
+      "ok": true,
+      "hr_bpm": 64.1299,
+      "displayedHr_bpm": null,
+      "beats": "3/5",
+      "accmax_m_s2": 4.3946,
+      "accmax68": [
+        3.9793,
+        4.9081
+      ],
+      "at_ms": 105.102,
+      "at68_ms": [
+        104.7911,
+        105.2931
+      ],
+      "psv_cm_s": 34.0191,
+      "accmax_display_px_per_px": null,
+      "truth": {
+        "accmax_m_s2": 4.366,
+        "at_ms": 103.8119,
+        "amplitudeScale": 0.9784
+      },
+      "qc": []
+    }
+  ]
+}
