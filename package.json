@@ -1,0 +1,18 @@
+{
+  "name": "accmax-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automated ACCmax, AT and PAT measurement from duplex ultrasound spectral Doppler waveforms, with an in-browser workbench.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "validate": "node scripts/validate-synthetic.mjs",
+    "samples": "node scripts/make-samples.mjs",
+    "build": "node scripts/build-single-file.mjs",
+    "serve": "npx --yes http-server web -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "license": "UNLICENSED"
+}

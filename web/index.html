@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACCmax Workbench</title>
+<meta name="description" content="Automated ACCmax, acceleration time (AT) and pedal acceleration time (PAT) from duplex ultrasound spectral Doppler waveforms.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 40 28" aria-hidden="true">
+      <path class="mark-wave" d="M1 24 H9 C11 24 12 23 13 20 L17 6 C18 3 20 3 21 6 L23 14 C24 17 25 18 27 18 H39"></path>
+      <path class="mark-tangent" d="M10.5 27 L19.5 1"></path>
+    </svg>
+    <div>
+      <h1>ACCmax Workbench</h1>
+      <p class="tagline">Maximal systolic acceleration and acceleration time from spectral Doppler</p>
+    </div>
+  </div>
+  <p class="notice"><span>Research prototype</span><span>Not for clinical decisions</span><span>Files never leave this browser</span></p>
+</header>
+
+<main class="layout">
+  <aside class="rail" aria-label="Data and settings">
+    <section class="panel" aria-labelledby="data-h">
+      <h2 id="data-h">Recording</h2>
+      <label class="drop" id="drop" for="file-input">
+        <input type="file" id="file-input" accept=".csv,.txt,.tsv,.dat,.png,.jpg,.jpeg,.bmp,.webp,.dcm,.dicom,application/dicom,image/*,text/*">
+        <span class="drop-title">Open a recording</span>
+        <span class="drop-hint">DICOM spectral capture, a screenshot (PNG or JPG), or a CSV of time and velocity. Drop it here or click to choose.</span>
+      </label>
+      <div class="example">
+        <label for="example-select">Or load an example</label>
+        <div class="inline">
+          <select id="example-select">
+            <option value="triphasic">Triphasic</option>
+            <option value="biphasic">Biphasic</option>
+            <option value="monophasic">Monophasic</option>
+            <option value="irregular">Irregular rhythm</option>
+            <option value="screenshot">Screenshot image</option>
+          </select>
+          <button class="btn" id="example-btn" type="button">Load</button>
+        </div>
+        <details class="sub-details">
+          <summary>Example settings</summary>
+          <div class="grid2">
+            <label for="ex-hr">Heart rate <span class="unit">bpm</span></label>
+            <input id="ex-hr" type="number" min="35" max="180" step="1" value="68">
+            <label for="ex-dur">Duration <span class="unit">s</span></label>
+            <input id="ex-dur" type="number" min="2" max="30" step="0.5" value="6">
+            <label for="ex-noise">Envelope noise <span class="unit">cm/s</span></label>
+            <input id="ex-noise" type="number" min="0" max="15" step="0.25" value="1">
+            <label for="ex-seed">Random seed</label>
+            <input id="ex-seed" type="number" min="1" max="9999" step="1" value="11">
+          </div>
+          <p class="hint">Examples are synthetic waveforms with a known true ACCmax and AT, shown next to the measurement.</p>
+        </details>
+      </div>
+      <p class="source" id="source-line">No recording loaded.</p>
+      <div id="csv-options" class="csv-options" hidden>
+        <div class="grid2">
+          <label for="csv-tcol">Time column</label>
+          <select id="csv-tcol"></select>
+          <label for="csv-vcol">Velocity column</label>
+          <select id="csv-vcol"></select>
+          <label for="csv-tunit">Time unit</label>
+          <select id="csv-tunit"><option value="s">seconds</option><option value="ms">milliseconds</option></select>
+          <label for="csv-vunit">Velocity unit</label>
+          <select id="csv-vunit"><option value="m/s">m/s</option><option value="cm/s">cm/s</option><option value="mm/s">mm/s</option></select>
+          <label for="csv-rate" class="rate-row">Sample rate <span class="unit">Hz</span></label>
+          <input id="csv-rate" class="rate-row" type="number" min="1" step="1" value="200">
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="site-h">
+      <h2 id="site-h">Measurement site</h2>
+      <label class="visually-hidden" for="site">Artery</label>
+      <select id="site"></select>
+      <p class="hint" id="site-hint"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="settings-h">
+      <h2 id="settings-h">Fit settings</h2>
+      <div class="grid2">
+        <label for="p-onset" class="span2">Onset point</label>
+        <select id="p-onset" class="span2"></select>
+        <label for="p-span">Tangent span <span class="unit">ms</span></label>
+        <input id="p-span" type="number" min="4" max="80" step="1" value="20">
+        <label for="p-bw">Smoothing <span class="unit">ms</span></label>
+        <input id="p-bw" type="number" min="1" max="40" step="0.5" value="5">
+        <label for="p-bwat">Smoothing per AT</label>
+        <input id="p-bwat" type="number" min="0" max="0.4" step="0.01" value="0.15">
+        <label for="p-hrmin">Heart rate from <span class="unit">bpm</span></label>
+        <input id="p-hrmin" type="number" min="20" max="120" step="1" value="30">
+        <label for="p-hrmax">Heart rate to <span class="unit">bpm</span></label>
+        <input id="p-hrmax" type="number" min="60" max="250" step="1" value="200">
+        <label for="p-nterms">Periodogram harmonics</label>
+        <input id="p-nterms" type="number" min="1" max="6" step="1" value="3">
+        <label for="p-corr">Min. beat similarity <span class="unit">r</span></label>
+        <input id="p-corr" type="number" min="0" max="1" step="0.01" value="0.85">
+        <label for="p-boot">Bootstrap resamples</label>
+        <input id="p-boot" type="number" min="0" max="1000" step="50" value="200">
+      </div>
+      <p class="hint" id="onset-hint"></p>
+      <button class="btn primary wide" id="run-btn" type="button">Run fit again</button>
+    </section>
+  </aside>
+
+  <div class="work">
+    <section class="readout" id="readout" aria-labelledby="readout-h" aria-live="polite">
+      <div class="readout-head">
+        <div>
+          <h2 id="readout-h">Measurement</h2>
+          <p class="readout-sub" id="readout-sub">Load a recording or an example to begin.</p>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" id="reset-btn" type="button" disabled>Reset calipers to fit</button>
+          <button class="btn ghost" id="copy-btn" type="button" disabled>Copy results</button>
+          <button class="btn ghost" id="json-btn" type="button" disabled>Download JSON</button>
+          <button class="btn ghost" id="csv-btn" type="button" disabled>Download CSV</button>
+        </div>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <ul class="qc" id="qc"></ul>
+      <textarea id="copy-fallback" class="copy-fallback" rows="2" readonly hidden aria-label="Results text to copy"></textarea>
+    </section>
+
+    <section class="panel" id="calib-panel" aria-labelledby="calib-h" hidden>
+      <div class="panel-head">
+        <h2 id="calib-h">Calibrate the image</h2>
+        <p class="calib-status" id="calib-status"></p>
+      </div>
+      <div class="calib-tools">
+        <div class="seg" role="group" aria-label="Calibration tool">
+          <button type="button" class="seg-btn" data-tool="region" aria-pressed="true">Display region</button>
+          <button type="button" class="seg-btn" data-tool="baseline" aria-pressed="false">Baseline</button>
+          <button type="button" class="seg-btn" data-tool="vmark" aria-pressed="false">Velocity mark</button>
+          <button type="button" class="seg-btn" data-tool="tmark" aria-pressed="false">Time marks</button>
+        </div>
+        <div class="calib-fields">
+          <label for="c-vval">Velocity at mark <span class="unit">cm/s</span></label>
+          <input id="c-vval" type="number" step="1" value="60">
+          <label for="c-tval">Time between marks <span class="unit">s</span></label>
+          <input id="c-tval" type="number" step="0.05" min="0" value="1">
+          <label for="c-thr">Envelope threshold <output id="c-thr-out">–</output></label>
+          <div class="inline">
+            <input id="c-thr" type="range" min="1" max="254" value="60">
+            <button type="button" class="btn small" id="c-auto">Auto</button>
+          </div>
+          <label class="check"><input type="checkbox" id="c-invert"> Flow below the baseline is forward</label>
+          <label class="check"><input type="checkbox" id="c-color" checked> Ignore coloured overlays</label>
+          <span class="frame-field" id="c-frame-field" hidden>
+            <label for="c-frame">Frame</label>
+            <input id="c-frame" type="number" min="1" value="1">
+          </span>
+        </div>
+      </div>
+      <div class="calib-canvas-wrap"><canvas id="calib-canvas" width="900" height="360" aria-label="Spectral Doppler image with calibration marks"></canvas></div>
+    </section>
+
+    <section class="panel" id="trace-panel" aria-labelledby="trace-h">
+      <div class="panel-head">
+        <div>
+          <h2 id="trace-h">Velocity envelope</h2>
+          <p class="hint">Drag across the trace to choose the analysis window. Triangles mark the detected upstrokes.</p>
+        </div>
+        <button class="btn small" id="full-window-btn" type="button" disabled>Use whole trace</button>
+      </div>
+      <div class="plot"><svg id="trace-svg" role="img" aria-label="Velocity envelope over time"></svg></div>
+    </section>
+
+    <section class="panel" id="stack-panel" aria-labelledby="stack-h">
+      <div class="panel-head">
+        <div>
+          <h2 id="stack-h">Stacked beats and calipers</h2>
+          <p class="hint" id="stack-hint">Drag the amber calipers along the curve, or focus one and use the arrow keys (Shift for 5 ms steps).</p>
+        </div>
+        <div class="toggles">
+          <div class="seg" role="group" aria-label="Stacking">
+            <button type="button" class="seg-btn" data-view="aligned" aria-pressed="true">Beat-aligned</button>
+            <button type="button" class="seg-btn" data-view="fold" aria-pressed="false">Fixed-period fold</button>
+          </div>
+          <div class="seg" role="group" aria-label="Zoom">
+            <button type="button" class="seg-btn" data-zoom="upstroke" aria-pressed="true">Upstroke</button>
+            <button type="button" class="seg-btn" data-zoom="cycle" aria-pressed="false">Full cycle</button>
+          </div>
+        </div>
+      </div>
+      <div class="plot tall"><svg id="stack-svg" role="img" aria-label="Stacked heartbeats with measurement calipers"></svg></div>
+      <div class="legend" id="stack-legend"></div>
+    </section>
+
+    <div class="diag">
+      <section class="panel" aria-labelledby="ls-h">
+        <div class="panel-head">
+          <div>
+            <h2 id="ls-h">Periodogram</h2>
+            <p class="hint">Multi-harmonic Lomb–Scargle. Click a peak to force that heart rate.</p>
+          </div>
+          <button class="btn small" id="hr-auto-btn" type="button" hidden>Automatic</button>
+        </div>
+        <div class="plot"><svg id="ls-svg" role="img" aria-label="Lomb–Scargle periodogram against heart rate"></svg></div>
+      </section>
+      <section class="panel" aria-labelledby="oc-h">
+        <div class="panel-head">
+          <div>
+            <h2 id="oc-h">Beat timing, O − C</h2>
+            <p class="hint">Observed upstroke time minus a strict periodic ephemeris. Scatter is heart-rate variability.</p>
+          </div>
+        </div>
+        <div class="plot"><svg id="oc-svg" role="img" aria-label="Observed minus computed upstroke times"></svg></div>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="beats-h">
+      <h2 id="beats-h">Beats</h2>
+      <p class="hint">Single-beat values use the same smoothing and definitions as the stack. Untick a beat to leave it out.</p>
+      <div class="table-wrap">
+        <table class="beats">
+          <thead>
+            <tr><th scope="col">Beat</th><th scope="col">Upstroke <span class="unit">s</span></th><th scope="col">RR <span class="unit">ms</span></th><th scope="col">O − C <span class="unit">ms</span></th><th scope="col">Similarity <span class="unit">r</span></th><th scope="col">ACCmax <span class="unit">m/s²</span></th><th scope="col" id="beats-at-h">AT <span class="unit">ms</span></th><th scope="col">Status</th><th scope="col">Use</th></tr>
+          </thead>
+          <tbody id="beats-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel method" aria-labelledby="method-h">
+      <h2 id="method-h">How the fit works</h2>
+      <ol>
+        <li><strong>Envelope.</strong> The outer (maximum-velocity) edge of the spectrum is traced column by column, or read from a CSV.</li>
+        <li><strong>Period.</strong> A multi-harmonic Lomb–Scargle periodogram over the selected window gives the heart rate. It tolerates gaps such as the erase bar.</li>
+        <li><strong>Beats.</strong> Each systolic upstroke is found by stepping one period from the previous one. Each beat is then shifted to best match the average of the other beats (leave-one-out cross-correlation), so heart-rate variability does not smear the stack.</li>
+        <li><strong>Stack.</strong> The aligned beats are folded onto one time axis in milliseconds from the upstroke and smoothed with robust local quadratic regression.</li>
+        <li><strong>Landmarks.</strong> ACCmax is the steepest chord of the chosen span on the upstroke. The valley is the end-diastolic minimum found by walking back from that chord, so a reverse-flow trough is never used. AT runs from the onset to the first systolic peak.</li>
+        <li><strong>Uncertainty.</strong> Beats are resampled with replacement to give 68% and 95% intervals. These reflect beat-to-beat variation only, not angle or calibration error.</li>
+      </ol>
+    </section>
+  </div>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -14,3 +14,12 @@ The script checks the source video's SHA-256 before extracting a velocity envelo
 The plot is intended to help develop and inspect ACCmax extraction code. It is not an independently validated ACCmax measurement. For a different spectral export, recalibrate the script to that export's axes and Doppler sign.
 
 To regenerate the six [published figure crops](../figures/README.md) and their overview plot, run `python3 figures/crop_frontiers_figures.py` from the repository root after installing the same Python requirements. The script verifies both original figure checksums and dimensions before cropping. It does not estimate velocity, time, or ACCmax from the published figures.
+
+## Workbench scripts (Node.js)
+
+These support the browser tool in [`web/`](../web/) and need Node 20 or newer:
+
+- `npm run validate` runs [`validate-synthetic.mjs`](validate-synthetic.mjs), a Monte Carlo comparison of the automated measurement against synthetic waveforms with known ACCmax and AT.
+- `npm run samples` runs [`make-samples.mjs`](make-samples.mjs), which writes synthetic CSV, PNG and DICOM examples to a git-ignored `samples/` folder for trying the tool. They are synthetic and not data cases.
+- `npm run build` runs [`build-single-file.mjs`](build-single-file.mjs), which bundles the tool into `dist/accmax-workbench.html`.
+- [`lib/dicom-writer.mjs`](lib/dicom-writer.mjs) writes minimal DICOM files with ultrasound-region calibration, for tests and samples.
