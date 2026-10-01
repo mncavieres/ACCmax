@@ -14,6 +14,8 @@ ACCmax is the steepest slope of the systolic velocity upstroke. A physically mea
 
 The original materials are credited under their [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) licenses. See the [video provenance and checksum](data/README.md), [figure provenance and panel map](figures/README.md), and [video plot reproduction instructions](scripts/README.md).
 
+For Claude working on ACCmax extraction, start with the [real data case guide](CLAUDE.md).
+
 ![Digitized spectral envelope of a human finger artery](plots/finger/finger_recording_envelope.png)
 
 ![Published human tibial and brachial artery spectral displays](figures/plots/human_limb_spectral_overview.png)
