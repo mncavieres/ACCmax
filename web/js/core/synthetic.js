@@ -20,11 +20,11 @@ export const PRESETS = {
     psv: 0.55,
     tauR: 0.12,
     nRise: 3.5,
-    reverse: 0.14,
-    revDelay: 0.24,
-    revWidth: 0.035,
-    late: 0.06,
-    lateDelay: 0.39,
+    reverse: 0.22,
+    revDelay: 0.28,
+    revWidth: 0.045,
+    late: 0.07,
+    lateDelay: 0.44,
     lateWidth: 0.05,
     diastolic: 0,
     diaRise: 0.08,
@@ -224,4 +224,24 @@ export function renderSpectrogram(sim, {
     for (let y = region.y1 + 3; y < region.y1 + 3 + len && y < height; y++) put(x, y, 200);
   }
   return { width, height, data, calibration: { region, baselineY, velPerPx, secPerPx, tOffset } };
+}
+
+/**
+ * True values for the beats actually measured from a simulation. ACCmax
+ * scales with each beat's amplitude, so a short window of strong or weak
+ * beats has its own true mean; AT does not depend on amplitude.
+ * @param {ReturnType<typeof synthesize>} sim
+ * @param {number[]} upstrokeTimes upstroke times of the stacked beats (s)
+ */
+export function truthForBeats(sim, { preset = 'triphasic', shape = null, hr = 65 } = {}, upstrokeTimes = [], lmOptions = {}) {
+  const truth = syntheticTruth({ preset, shape, hr }, lmOptions);
+  const ratios = upstrokeTimes
+    .map((tu) => {
+      let k = -1;
+      for (let i = 0; i < sim.onsets.length; i++) if (sim.onsets[i] <= tu + 1e-9) k = i;
+      return k >= 0 ? sim.amps[k] / sim.shape.psv : NaN;
+    })
+    .filter(Number.isFinite);
+  const scale = ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;
+  return { ...truth, accmax: truth.accmax * scale, scale };
 }

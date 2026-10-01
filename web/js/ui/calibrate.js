@@ -102,22 +102,28 @@ export function createCalibrator(ui, { onTrace, onStatus }) {
     }
     const env = s.envelope;
     if (env && cal) {
-      ctx.strokeStyle = caliper;
-      ctx.lineWidth = lw * 1.5;
-      ctx.beginPath();
-      let pen = false;
-      for (let c = 0; c < env.edgeY.length; c++) {
-        const y = env.edgeY[c];
-        if (!Number.isFinite(y)) {
-          pen = false;
-          continue;
+      // Reverse-flow edge thin, forward envelope (the one measured) bold.
+      for (const [edges, color, width] of [
+        [env.edgeReverseY, accent, lw],
+        [env.edgeY, caliper, lw * 1.6],
+      ]) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        let pen = false;
+        for (let c = 0; c < edges.length; c++) {
+          const y = edges[c];
+          if (!Number.isFinite(y)) {
+            pen = false;
+            continue;
+          }
+          const x = cal.region.x0 + c;
+          if (pen) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+          pen = true;
         }
-        const x = cal.region.x0 + c;
-        if (pen) ctx.lineTo(x, y);
-        else ctx.moveTo(x, y);
-        pen = true;
+        ctx.stroke();
       }
-      ctx.stroke();
     }
   }
 
@@ -130,7 +136,12 @@ export function createCalibrator(ui, { onTrace, onStatus }) {
       status.dataset.state = 'todo';
     } else if (cal) {
       const scale = `${(Math.abs(cal.velPerPx) * 100).toFixed(2)} cm/s per pixel, ${(cal.secPerPx * 1000).toFixed(2)} ms per pixel`;
-      status.textContent = cal.source === 'manual' ? `Calibrated by hand: ${scale}.` : `Calibrated from the DICOM ultrasound region (${cal.dataType}): ${scale}.`;
+      status.textContent =
+        cal.source === 'manual'
+          ? `Calibrated by hand: ${scale}.`
+          : cal.sourceLabel
+            ? `Calibrated from ${cal.sourceLabel}: ${scale}.`
+            : `Calibrated from the DICOM ultrasound region (${cal.dataType}): ${scale}.`;
       status.dataset.state = 'done';
     }
   }
@@ -159,7 +170,7 @@ export function createCalibrator(ui, { onTrace, onStatus }) {
       draw();
       const qc = [];
       if (s.envelope.clippedFraction > 0.01) {
-        qc.push({ level: 'warn', message: `The envelope reaches the edge of the velocity scale in ${(s.envelope.clippedFraction * 100).toFixed(0)}% of columns. Possible aliasing: raise the scale (PRF) or move the baseline when recording.` });
+        qc.push({ level: 'warn', message: `The forward envelope reaches the edge of the traced region in ${(s.envelope.clippedFraction * 100).toFixed(0)}% of columns. If that edge is the end of the velocity scale, this is possible aliasing: raise the scale (PRF) or move the baseline when recording.` });
       }
       if (cal.dopplerAngle > 60) {
         qc.push({ level: 'warn', message: `Doppler angle ${cal.dopplerAngle.toFixed(0)}° is above 60°. Velocities, and therefore ACCmax, are less reliable.` });

@@ -103,11 +103,14 @@ export function localPoly(x, y, { x0, dx, n, bandwidth, degree = 2, robustIters 
       const f = pos - k;
       res[i] = y[i] - (fit.value[k] * (1 - f) + fit.value[k + 1] * f);
     }
-    // Floor the robust scale so near-noise-free data (smooth exported traces)
-    // do not down-weight every point that is not fitted exactly.
+    // Floor the robust scale at 5% of the signal size. The robustness step is
+    // there to reject spikes; without a floor, low-noise data would treat
+    // ordinary beat-to-beat amplitude differences as outliers, and the
+    // template would switch between subsets of beats along the upstroke,
+    // which adds false steepness.
     let ymax = 0;
     for (let i = 0; i < y.length; i++) if (Math.abs(y[i]) > ymax) ymax = Math.abs(y[i]);
-    const s = Math.max(median(Array.from(res, Math.abs).filter(Number.isFinite)), 0.005 * ymax);
+    const s = Math.max(median(Array.from(res, Math.abs).filter(Number.isFinite)), 0.05 * ymax);
     if (!(s > 0)) break;
     for (let i = 0; i < x.length; i++) {
       const u = res[i] / (6 * s);

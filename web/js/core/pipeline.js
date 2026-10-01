@@ -19,7 +19,7 @@
 //   6. measure      ACCmax, valley, onset, peak and AT on the stacked template
 //   7. uncertainty  per-beat measurements and a beat-level bootstrap
 
-import { lombScargle } from './lombscargle.js';
+import { lombScargle, harmonicFit } from './lombscargle.js';
 import { localPoly, sortPairs } from './smooth.js';
 import { findLandmarks } from './landmarks.js';
 import { median, mad, percentile, mean, std, rng, interpGrid } from './stats.js';
@@ -37,6 +37,7 @@ export const DEFAULT_PARAMS = {
   onsetMethod: 'tangent',
   minCorr: 0.85,
   maxShiftMs: 60,
+  removeDropouts: true,
   alignIters: 6,
   bootstrap: 200,
   excludedTimes: [],
@@ -85,17 +86,70 @@ function interiorBeats(fids, P, tStart, tEnd) {
   return fids.filter((f) => f.t - CORE_BEFORE * P >= tStart && f.t + CORE_AFTER * P <= tEnd && !f.atEdge);
 }
 
-function choosePeriod(g, Pls, tStart, tEnd, pMin, pMax) {
+// Shape similarity of consecutive tracked upstrokes versus every-other one.
+// When a second forward wave in each cycle (counterpulsation, a strong
+// late-diastolic wave) is mistaken for a heartbeat, odd and even "beats"
+// look different, while true consecutive heartbeats look alike.
+function alternates(g, fids, P) {
+  if (fids.length < 4) return false;
+  const shape = (f) => {
+    const out = [];
+    for (let k = 0; k < 40; k++) {
+      const t = f.t - 0.2 * P + (k / 39) * 0.6 * P;
+      out.push(interpGrid(g.x0, g.dx, g.value, t));
+    }
+    return out.every(Number.isFinite) ? out : null;
+  };
+  const shapes = fids.map(shape);
+  const corr = (lag) => {
+    const r = [];
+    for (let k = 0; k + lag < shapes.length; k++) if (shapes[k] && shapes[k + lag]) r.push(pearson(shapes[k], shapes[k + lag]));
+    return r.length ? median(r) : NaN;
+  };
+  const c1 = corr(1);
+  const c2 = corr(2);
+  return Number.isFinite(c1) && Number.isFinite(c2) && c2 - c1 > 0.1;
+}
+
+// Pick between the periodogram period and its half or double. Half the
+// period is taken only when the periodogram itself supports it (comparable
+// power at twice the rate) and the extra upstrokes are true repeats of the
+// others: a second forward wave in each cycle (counterpulsation, a strong
+// late-diastolic wave) must not be counted as a heartbeat.
+function choosePeriod(g, Pls, tStart, tEnd, pMin, pMax, powerAt) {
   const candidates = [Pls / 2, Pls, Pls * 2].filter((p) => p >= pMin * 0.95 && p <= pMax * 1.05);
+  const pLs = powerAt(1 / Pls);
   for (const P of candidates) {
+    if (P < Pls && powerAt(1 / P) < 0.7 * pLs) continue;
     const fids = trackBeats(g, P, tStart, tEnd);
     const inner = interiorBeats(fids, P, tStart, tEnd);
     if (inner.length < 2) continue;
     const smax = Math.max(...inner.map((f) => f.s));
     const strong = inner.filter((f) => f.s >= 0.5 * smax).length / inner.length;
-    if (strong >= 0.8) return P;
+    if (strong < 0.8) continue;
+    if (P < Pls && alternates(g, inner, P)) continue;
+    return P;
   }
   return Pls;
+}
+
+// Remove isolated one-sample dropouts: a traced maximum-velocity edge can
+// miss the spectrum for a sample (or a merged digitisation can interleave an
+// undrawn frame) and fall towards the baseline, but the true envelope never
+// dips far below both of its neighbours within one sample.
+function removeDropouts(t, v) {
+  const n = v.length;
+  if (n < 5) return { t, v, removed: 0 };
+  const sorted = Array.from(v).sort((a, b) => a - b);
+  const range = sorted[Math.floor(0.99 * (n - 1))] - sorted[Math.floor(0.01 * (n - 1))];
+  const keep = new Uint8Array(n).fill(1);
+  for (let i = 1; i < n - 1; i++) {
+    const lowNeighbour = Math.min(v[i - 1], v[i + 1]);
+    if (lowNeighbour - v[i] > 0.25 * range) keep[i] = 0;
+  }
+  const removed = n - keep.reduce((a, b) => a + b, 0);
+  if (!removed) return { t, v, removed };
+  return { t: t.filter((_, i) => keep[i]), v: v.filter((_, i) => keep[i]), removed };
 }
 
 function pearson(a, b) {
@@ -197,9 +251,13 @@ export function analyze(tIn, vIn, params = {}) {
     keepV.push(v);
   }
   const sorted = sortPairs(keepT, keepV);
-  const t = sorted.x;
-  const v = sorted.y;
+  const cleaned = p.removeDropouts ? removeDropouts(sorted.x, sorted.y) : { t: sorted.x, v: sorted.y, removed: 0 };
+  const t = cleaned.t;
+  const v = cleaned.v;
   const N = t.length;
+  if (cleaned.removed > 0.002 * sorted.x.length) {
+    qc.push({ level: 'info', message: `Removed ${cleaned.removed} isolated one-sample dropouts from the envelope (${((100 * cleaned.removed) / sorted.x.length).toFixed(1)}% of samples).` });
+  }
   if (N < 20) return fail('Too few samples in the selected window. Select a longer stretch of trace.');
   const tStart = t[0];
   const tEnd = t[N - 1];
@@ -229,7 +287,7 @@ export function analyze(tIn, vIn, params = {}) {
   if (p.hrOverride) {
     P = 60 / p.hrOverride;
   } else {
-    P = choosePeriod(gRaw, Pls, tStart, tEnd, pMin, pMax);
+    P = choosePeriod(gRaw, Pls, tStart, tEnd, pMin, pMax, (f) => harmonicFit(t, v, f, p.nterms).power);
     if (Math.abs(P - Pls) / Pls > 0.2) {
       qc.push({
         level: 'info',
@@ -351,7 +409,7 @@ export function analyze(tIn, vIn, params = {}) {
   const lo = Math.max(stackAll.x[0], -0.6 * P);
   const hi = Math.min(stackAll.x[stackAll.x.length - 1], 0.9 * P);
   let hStack = Math.max(h, (1.5 * dt) / Math.sqrt(included.length));
-  let template0 = templateFrom(stackAll, lo, hi, hStack, 2);
+  let template0 = templateFrom(stackAll, lo, hi, hStack, p.robustIters ?? 2);
 
   // 6. Landmarks; then re-reference so τ = 0 is the centre of the ACCmax chord.
   const lmOpts = { spanMs: p.spanMs, onsetMethod: p.onsetMethod, period: P, searchFrom: -0.15 * P, searchTo: 0.15 * P };
@@ -360,7 +418,7 @@ export function analyze(tIn, vIn, params = {}) {
   const hAdaptive = p.bandwidthPerAT * lm0.at;
   if (hAdaptive > 1.1 * hStack) {
     hStack = hAdaptive;
-    template0 = templateFrom(stackAll, lo, hi, hStack, 2);
+    template0 = templateFrom(stackAll, lo, hi, hStack, p.robustIters ?? 2);
     lm0 = findLandmarks(template0, lmOpts);
     if (!lm0.ok) return fail(lm0.reason);
   }

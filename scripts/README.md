@@ -17,9 +17,13 @@ To regenerate the six [published figure crops](../figures/README.md) and their o
 
 ## Workbench scripts (Node.js)
 
-These support the browser tool in [`web/`](../web/) and need Node 20 or newer:
+These support the browser tool in [`web/`](../web/) and need Node 20 or newer (`npm install` first):
 
+- `node scripts/calibrate-figure-crops.mjs` reads a provisional pixel → velocity and pixel → time calibration from the scanner overlay printed in each published figure crop (labelled velocity ticks; timeline marks or dotted time lines) and writes [`figures/calibration.json`](../figures/calibration.json).
+- `node scripts/fit-cases.mjs` fits every real case (finger envelope, tibial and brachial crops) and a few simulations with known truth, and writes `results/summary.json` plus per-case plot data in `results/cases/` (not tracked). `npm run fit-cases` runs both steps.
+- `python3 scripts/plot_checkplots.py` draws one checkplot per case and an overview in `results/checkplots/`, and refreshes the table in `results/README.md`.
 - `npm run validate` runs [`validate-synthetic.mjs`](validate-synthetic.mjs), a Monte Carlo comparison of the automated measurement against synthetic waveforms with known ACCmax and AT.
-- `npm run samples` runs [`make-samples.mjs`](make-samples.mjs), which writes synthetic CSV, PNG and DICOM examples to a git-ignored `samples/` folder for trying the tool. They are synthetic and not data cases.
-- `npm run build` runs [`build-single-file.mjs`](build-single-file.mjs), which bundles the tool into `dist/accmax-workbench.html`.
-- [`lib/dicom-writer.mjs`](lib/dicom-writer.mjs) writes minimal DICOM files with ultrasound-region calibration, for tests and samples.
+- `npm run build:site` assembles the website in `_site/` (tool, self-hosted fonts, real cases, results page); `npm run serve` builds and serves it.
+- `npm run build` bundles the tool into one offline file, `dist/accmax-workbench.html`.
+- `npm run samples` writes synthetic CSV, PNG and DICOM examples to a git-ignored `samples/` folder. They are synthetic and not data cases.
+- [`lib/`](lib/) holds a minimal PNG reader/writer, a DICOM writer for tests, and the font list.

@@ -5,6 +5,7 @@
 //                               wrapper, for hosts that supply their own
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { inlineFontCss } from './lib/fonts.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
@@ -22,8 +23,11 @@ const js = bundle.outputFiles[0].text.replaceAll('</script', '<\\/script');
 const css = read('web/styles.css');
 let html = read('web/index.html');
 html = html.replace('<link rel="stylesheet" href="styles.css">', () => `<style>\n${css}</style>`);
+html = html.replace('<link rel="stylesheet" href="fonts/fonts.css">', () => `<style>\n${inlineFontCss()}\n</style>`);
+// The results page lives on the website; link there from standalone copies.
+html = html.replace('href="results/"', 'href="https://mncavieres.github.io/ACCmax/results/"');
 html = html.replace('<script type="module" src="js/app.js"></script>', () => `<script>\n${js}</script>`);
-if (html.includes('src="js/app.js"') || html.includes('href="styles.css"')) throw new Error('inlining failed');
+if (html.includes('src="js/app.js"') || html.includes('href="styles.css"') || html.includes('fonts/fonts.css')) throw new Error('inlining failed');
 
 mkdirSync(new URL('dist/', root), { recursive: true });
 writeFileSync(new URL('dist/accmax-workbench.html', root), html);

@@ -1,0 +1,312 @@
+{
+  "status": "provisional",
+  "note": "Derived from the scanner overlay printed in each published panel; not independently verified. Velocities assume the displayed scale is already angle-corrected. Do not report results from this calibration as clinical ACCmax values.",
+  "sources": [
+    "Zhang et al., Frontiers in Cardiovascular Medicine 8:795697 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+    "Zhang et al., Frontiers in Cardiovascular Medicine 8:721140 (2021), Figure 2, CC BY 4.0. See figures/README.md."
+  ],
+  "generatedBy": "scripts/calibrate-figure-crops.mjs",
+  "panels": [
+    {
+      "file": "figures/crops/anterior_tibial_baseline.png",
+      "label": "Anterior tibial artery, baseline",
+      "subtitle": "Healthy young man, at rest (figure panel)",
+      "source": "Zhang et al., Frontiers in Cardiovascular Medicine 8:795697 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+      "width": 1535,
+      "height": 378,
+      "region": {
+        "x0": 0,
+        "y0": 5,
+        "x1": 1392,
+        "y1": 300
+      },
+      "baselineY": 240,
+      "velPerPx": 0.0028011204481792717,
+      "secPerPx": 0.002559780963649871,
+      "tOffset": 0,
+      "flowUp": true,
+      "displayedHr_bpm": 58,
+      "evidence": {
+        "velocityTicks": [
+          {
+            "y": 25.5,
+            "cm_s": 60
+          },
+          {
+            "y": 97.5,
+            "cm_s": 40
+          },
+          {
+            "y": 167.5,
+            "cm_s": 20
+          },
+          {
+            "y": 239.5,
+            "cm_s": 0
+          },
+          {
+            "y": 311.5,
+            "cm_s": -20
+          }
+        ],
+        "velocityFitRms_px": 0.49,
+        "pxPerCmS": 3.57,
+        "timelineRowY": 344,
+        "timeMarks": 34,
+        "pxPer100ms": 39.066,
+        "timeFitRms_px": 0.31,
+        "assumption": "Timeline marks are 0.1 s apart (taller marks every 0.2 s, tallest every 1 s); the scanner also prints a 66 mm/s sweep."
+      }
+    },
+    {
+      "file": "figures/crops/anterior_tibial_eecp_1.png",
+      "label": "Anterior tibial artery, EECP-1",
+      "subtitle": "Same subject during counterpulsation, setting EECP-1 (figure panel)",
+      "source": "Zhang et al., Frontiers in Cardiovascular Medicine 8:795697 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+      "width": 1535,
+      "height": 425,
+      "region": {
+        "x0": 0,
+        "y0": 30,
+        "x1": 1384,
+        "y1": 355
+      },
+      "baselineY": 234,
+      "velPerPx": 0.003791469194312796,
+      "secPerPx": 0.0024305110871049368,
+      "tOffset": 0,
+      "flowUp": true,
+      "displayedHr_bpm": 63,
+      "evidence": {
+        "velocityTicks": [
+          {
+            "y": 128.5,
+            "cm_s": 40
+          },
+          {
+            "y": 234,
+            "cm_s": 0
+          },
+          {
+            "y": 339.5,
+            "cm_s": -40
+          }
+        ],
+        "velocityFitRms_px": 0,
+        "pxPerCmS": 2.6375,
+        "timelineRowY": 407,
+        "timeMarks": 29,
+        "pxPer100ms": 41.144,
+        "timeFitRms_px": 0.23,
+        "assumption": "Timeline marks are 0.1 s apart (taller marks every 0.2 s, tallest every 1 s); the scanner also prints a 66 mm/s sweep."
+      }
+    },
+    {
+      "file": "figures/crops/anterior_tibial_eecp_2.png",
+      "label": "Anterior tibial artery, EECP-2",
+      "subtitle": "Same subject during counterpulsation, setting EECP-2 (figure panel)",
+      "source": "Zhang et al., Frontiers in Cardiovascular Medicine 8:795697 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+      "width": 1535,
+      "height": 457,
+      "region": {
+        "x0": 0,
+        "y0": 32,
+        "x1": 1386,
+        "y1": 340
+      },
+      "baselineY": 220.5,
+      "velPerPx": 0.005217391304347826,
+      "secPerPx": 0.0024047616729284873,
+      "tOffset": 0,
+      "flowUp": true,
+      "displayedHr_bpm": 61,
+      "evidence": {
+        "velocityTicks": [
+          {
+            "y": 105.5,
+            "cm_s": 60
+          },
+          {
+            "y": 220.5,
+            "cm_s": 0
+          },
+          {
+            "y": 335.5,
+            "cm_s": -60
+          }
+        ],
+        "velocityFitRms_px": 0,
+        "pxPerCmS": 1.9167,
+        "timelineRowY": 390,
+        "timeMarks": 28,
+        "pxPer100ms": 41.584,
+        "timeFitRms_px": 0.31,
+        "assumption": "Timeline marks are 0.1 s apart (taller marks every 0.2 s, tallest every 1 s); the scanner also prints a 66 mm/s sweep."
+      }
+    },
+    {
+      "file": "figures/crops/anterior_tibial_eecp_3.png",
+      "label": "Anterior tibial artery, EECP-3",
+      "subtitle": "Same subject during counterpulsation, setting EECP-3 (figure panel)",
+      "source": "Zhang et al., Frontiers in Cardiovascular Medicine 8:795697 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+      "width": 1535,
+      "height": 489,
+      "region": {
+        "x0": 0,
+        "y0": 22,
+        "x1": 1386,
+        "y1": 400
+      },
+      "baselineY": 278.5,
+      "velPerPx": 0.0050933786078098476,
+      "secPerPx": 0.00234590593566121,
+      "tOffset": 0,
+      "flowUp": true,
+      "displayedHr_bpm": 63,
+      "evidence": {
+        "velocityTicks": [
+          {
+            "y": 43,
+            "cm_s": 120
+          },
+          {
+            "y": 161,
+            "cm_s": 60
+          },
+          {
+            "y": 278.5,
+            "cm_s": 0
+          },
+          {
+            "y": 396.5,
+            "cm_s": -60
+          }
+        ],
+        "velocityFitRms_px": 0.11,
+        "pxPerCmS": 1.9633,
+        "timelineRowY": 458,
+        "timeMarks": 30,
+        "pxPer100ms": 42.627,
+        "timeFitRms_px": 0.44,
+        "assumption": "Timeline marks are 0.1 s apart (taller marks every 0.2 s, tallest every 1 s); the scanner also prints a 66 mm/s sweep."
+      }
+    },
+    {
+      "file": "figures/crops/brachial_before_eecp.png",
+      "label": "Brachial artery, before EECP",
+      "subtitle": "Inverted pulsed-wave display, coronary disease study (figure panel)",
+      "source": "Zhang et al., Frontiers in Cardiovascular Medicine 8:721140 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+      "width": 940,
+      "height": 280,
+      "region": {
+        "x0": 30,
+        "y0": 8,
+        "x1": 832,
+        "y1": 212
+      },
+      "baselineY": 63,
+      "velPerPx": -0.00855484265200122,
+      "secPerPx": 0.0058325232606582424,
+      "tOffset": 0,
+      "flowUp": false,
+      "displayedHr_bpm": null,
+      "evidence": {
+        "velocityTicks": [
+          {
+            "y": 16.5,
+            "cm_s": -40
+          },
+          {
+            "y": 63,
+            "cm_s": 0
+          },
+          {
+            "y": 109.5,
+            "cm_s": 40
+          },
+          {
+            "y": 157,
+            "cm_s": 80
+          },
+          {
+            "y": 203.5,
+            "cm_s": 120
+          },
+          {
+            "y": 250,
+            "cm_s": 160
+          }
+        ],
+        "velocityFitRms_px": 0.24,
+        "pxPerCmS": 1.1689,
+        "timeLines_x": [
+          207.5,
+          378,
+          721.7
+        ],
+        "pxPerSecond": 171.45,
+        "timeFitRms_px": 0.41,
+        "assumption": "Dotted vertical lines are 1 s apart. No heart rate is legible on the panel to cross-check this; the alternative (0.5 s) would imply about 140 bpm at rest. Least certain of the calibrations."
+      }
+    },
+    {
+      "file": "figures/crops/brachial_during_eecp.png",
+      "label": "Brachial artery, during EECP",
+      "subtitle": "Same panel set during counterpulsation, inverted display (figure panel)",
+      "source": "Zhang et al., Frontiers in Cardiovascular Medicine 8:721140 (2021), Figure 2, CC BY 4.0. See figures/README.md.",
+      "width": 940,
+      "height": 297,
+      "region": {
+        "x0": 30,
+        "y0": 26,
+        "x1": 840,
+        "y1": 228
+      },
+      "baselineY": 81,
+      "velPerPx": -0.00857843137254902,
+      "secPerPx": 0.005777317815466658,
+      "tOffset": 0,
+      "flowUp": false,
+      "displayedHr_bpm": null,
+      "evidence": {
+        "velocityTicks": [
+          {
+            "y": 34.5,
+            "cm_s": -40
+          },
+          {
+            "y": 81,
+            "cm_s": 0
+          },
+          {
+            "y": 127.5,
+            "cm_s": 40
+          },
+          {
+            "y": 174.5,
+            "cm_s": 80
+          },
+          {
+            "y": 221,
+            "cm_s": 120
+          },
+          {
+            "y": 267.5,
+            "cm_s": 160
+          }
+        ],
+        "velocityFitRms_px": 0.12,
+        "pxPerCmS": 1.1657,
+        "timeLines_x": [
+          211.3,
+          383.8,
+          557.5,
+          730.4
+        ],
+        "pxPerSecond": 173.09,
+        "timeFitRms_px": 0.25,
+        "assumption": "Dotted vertical lines are 1 s apart. No heart rate is legible on the panel to cross-check this; the alternative (0.5 s) would imply about 140 bpm at rest. Least certain of the calibrations."
+      }
+    }
+  ]
+}

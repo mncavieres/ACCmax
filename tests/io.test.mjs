@@ -57,7 +57,8 @@ test('DICOM spectral capture → calibration → envelope → ACCmax/AT', () => 
   let n = 0;
   for (let i = 0; i < env.t.length; i++) {
     const truthV = cleanSignal(sim, env.t[i]);
-    if (Math.abs(truthV) < 0.05 || !Number.isFinite(env.v[i])) continue;
+    if (Math.abs(truthV) < 0.05) continue;
+    // The signed envelope follows forward flow above and reverse flow below the baseline.
     err += ((env.v[i] - truthV) / cal.velPerPx) ** 2;
     n++;
   }

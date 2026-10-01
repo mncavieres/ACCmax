@@ -8,3 +8,5 @@ dist/
 *.log
 # Synthetic files from `npm run samples`; only real human data cases are tracked.
 samples/
+_site/
+results/cases/

@@ -22,28 +22,30 @@ For Claude working on ACCmax extraction, start with the [real data case guide](C
 
 ## ACCmax Workbench (automated measurement)
 
-The [`web/`](web/) folder holds a browser tool that measures **ACCmax**, **acceleration time (AT)** and **pedal acceleration time (PAT)** from a spectral Doppler recording. The operator picks a window of trace; the software:
+The [`web/`](web/) folder holds a browser tool that measures **ACCmax**, **acceleration time (AT)** and **pedal acceleration time (PAT)** from a spectral Doppler recording. You load a recording, press **Run automatic fit**, and check the result. The software:
 
-1. traces the maximum-velocity envelope (from a DICOM capture, a screenshot, or a CSV),
+1. traces the maximum-velocity envelope (from a DICOM capture, a screenshot, or a CSV), forward and reverse flow both,
 2. finds the heart rate with a multi-harmonic Lomb–Scargle periodogram,
 3. finds every systolic upstroke and aligns the beats to each other (per-beat O − C correction),
-4. stacks the aligned beats to beat down noise and smooths the stack,
+4. stacks the aligned beats over the full cardiac cycle to beat down noise, and smooths the stack,
 5. measures ACCmax (steepest tangent), the end-diastolic valley, the onset and the first systolic peak, and reports AT or PAT,
-6. gives bootstrap intervals, single-beat values and quality warnings. The fitted points can be dragged to make a manual measurement.
+6. gives bootstrap intervals, single-beat values and quality warnings. The fitted points can be dragged to make a manual measurement; both values are kept.
 
-Design, reasoning, synthetic validation results and the roadmap are in [docs/PLAN.md](docs/PLAN.md).
+- **Website:** https://mncavieres.github.io/ACCmax/ (published from `main` by [`.github/workflows/pages.yml`](.github/workflows/pages.yml); enable it once under Settings → Pages → Source: GitHub Actions). The examples menu includes the real cases in this repository.
+- **Results on every available case:** [results/README.md](results/README.md), with a checkplot per case and an overview.
+- **Design, validation and roadmap:** [docs/PLAN.md](docs/PLAN.md).
 
-> Research prototype, not a medical device. Its accuracy has so far been checked only on synthetic waveforms with known ground truth; it has not yet been run on the real cases above.
+> Research prototype, not a medical device. Accuracy has been checked on synthetic waveforms with known ground truth; the real cases above run end to end but have no expert ACCmax labels, and their calibrations are approximate or provisional.
 
 ### Run it
 
 ```bash
-npm install           # only needed for the single-file build (esbuild)
-npm run serve         # http://localhost:8080 (static server for web/)
+npm install           # fonts and esbuild for the builds
+npm run serve         # builds _site/ and serves it at http://localhost:8080
 npm run build         # dist/accmax-workbench.html: one file, opens from disk, works offline
 ```
 
-All processing runs in the browser; files are never uploaded. The tool can also generate synthetic example waveforms with known true values (triphasic, biphasic, monophasic, irregular rhythm, and a screenshot that needs calibrating). `npm run samples` writes synthetic example files to a git-ignored `samples/` folder; they are not tracked, because this repository keeps only real human measurements as data cases.
+All processing runs in the browser; files are never uploaded, and the page makes no third-party requests.
 
 | Input | Calibration | Notes |
 | --- | --- | --- |
@@ -51,22 +53,27 @@ All processing runs in the browser; files are never uploaded. The tool can also 
 | Screenshot (PNG/JPG) | Manual: draw the display region, click the baseline, one velocity mark and two time marks | Envelope threshold is automatic with a slider override. Coloured overlays are ignored. |
 | CSV / TSV / TXT | Columns and units are detected, then editable | Handles `;` separators with decimal commas. A single column needs a sample rate. |
 
-### Develop
+### Reproduce the results
 
 ```bash
-npm test              # unit and end-to-end tests (node:test, no dependencies)
-npm run validate      # Monte Carlo accuracy check against synthetic ground truth
+npm run fit-cases                    # calibrate the figure crops, fit every case (results/summary.json)
+pip install -r scripts/requirements.txt
+python3 scripts/plot_checkplots.py   # results/checkplots/*.png and the table in results/README.md
+npm run validate                     # Monte Carlo accuracy check against synthetic ground truth
+npm test                             # unit, end-to-end and real-data regression tests
 ```
 
 ```
 web/
-  index.html, styles.css
+  index.html, styles.css, js/app.js
   js/core/   lombscargle.js  smooth.js  landmarks.js  pipeline.js  synthetic.js  stats.js
   js/io/     dicom.js  envelope.js  csv.js
   js/ui/     plot.js  calibrate.js
-  js/app.js
-scripts/     validate-synthetic.mjs  make-samples.mjs  build-single-file.mjs  lib/dicom-writer.mjs
-tests/       core, pipeline and io tests
+scripts/     fit-cases.mjs  calibrate-figure-crops.mjs  plot_checkplots.py  validate-synthetic.mjs
+             build-site.mjs  build-single-file.mjs  make-samples.mjs  lib/
+tests/       core, pipeline, io and real-data tests
+figures/calibration.json   provisional calibration of the figure crops
+results/                   checkplots and summary
 docs/PLAN.md
 ```
 

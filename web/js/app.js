@@ -3,7 +3,7 @@
 
 import { analyze, DEFAULT_PARAMS } from './core/pipeline.js';
 import { measureFromPoints, ONSET_METHODS } from './core/landmarks.js';
-import { synthesize, syntheticTruth, renderSpectrogram, PRESETS } from './core/synthetic.js';
+import { synthesize, truthForBeats, renderSpectrogram, PRESETS } from './core/synthetic.js';
 import { parseDelimited, guessUnits, tableToTrace } from './io/csv.js';
 import { parseDicom, ultrasoundRegions, spectralCalibration, decodeFrame, imageInfo } from './io/dicom.js';
 import { createCalibrator } from './ui/calibrate.js';
@@ -22,6 +22,8 @@ const SITES = [
   { id: 'dfa', label: 'Deep femoral artery, proximal', pedal: false },
   { id: 'cfa', label: 'Common femoral artery', pedal: false },
   { id: 'hallux', label: 'Hallux', pedal: false },
+  { id: 'brachial', label: 'Brachial artery', pedal: false },
+  { id: 'digital', label: 'Digital artery (finger)', pedal: false },
   { id: 'other', label: 'Other or not recorded', pedal: false },
 ];
 
@@ -35,9 +37,11 @@ const state = {
   result: null,
   manual: null,
   view: 'aligned',
-  zoom: 'upstroke',
+  zoom: 'cycle',
   csv: null,
   truth: null,
+  realCases: [],
+  pendingAutoFit: false,
 };
 
 // ---------- formatting ----------
@@ -81,7 +85,9 @@ function initControls() {
   $('p-onset').addEventListener('change', onsetHint);
   onsetHint();
   for (const id of ['p-onset', 'p-span', 'p-bw', 'p-bwat', 'p-hrmin', 'p-hrmax', 'p-nterms', 'p-corr', 'p-boot']) {
-    $(id).addEventListener('change', () => run());
+    $(id).addEventListener('change', () => {
+      if (state.result) run();
+    });
   }
   $('run-btn').addEventListener('click', () => run());
 }
@@ -114,7 +120,7 @@ let runToken = 0;
 function run() {
   if (!state.trace) return;
   const token = ++runToken;
-  document.querySelector('.work').classList.add('busy');
+  document.querySelector('.flow').classList.add('busy');
   setTimeout(() => {
     if (token !== runToken) return;
     const params = readParams();
@@ -127,15 +133,18 @@ function run() {
     }
     state.result = result;
     state.manual = null;
-    if (state.source?.example) {
-      state.truth = syntheticTruth(state.source.example, { spanMs: params.spanMs, onsetMethod: params.onsetMethod });
+    if (state.source?.example && state.source.sim) {
+      const upstrokes = result.ok ? result.beats.filter((b) => b.included).map((b) => b.fiducial) : [];
+      state.truth = truthForBeats(state.source.sim, state.source.example, upstrokes, { spanMs: params.spanMs, onsetMethod: params.onsetMethod });
     }
-    document.querySelector('.work').classList.remove('busy');
+    document.querySelector('.flow').classList.remove('busy');
     renderAll();
   }, 16);
 }
 
-function setTrace(t, v, source, { qc = [], keepWindow = false } = {}) {
+// A new recording waits for "Run automatic fit"; refinements of a fitted
+// recording (window, calibration, settings) fit again straight away.
+function setTrace(t, v, source, { qc = [], keepWindow = false, autoFit = false } = {}) {
   state.trace = { t, v };
   state.source = source;
   state.qcExtra = qc;
@@ -147,17 +156,30 @@ function setTrace(t, v, source, { qc = [], keepWindow = false } = {}) {
   state.truth = null;
   $('source-line').textContent = source.label;
   $('full-window-btn').disabled = false;
-  run();
+  $('run-btn').disabled = false;
+  if (autoFit || state.pendingAutoFit) {
+    state.pendingAutoFit = false;
+    run();
+  } else {
+    state.result = null;
+    state.manual = null;
+    renderAll();
+  }
 }
 
 // ---------- loading ----------
-function loadExample(kind) {
+function loadExample(kind, { autoFit = false } = {}) {
+  if (kind.startsWith('real:')) {
+    loadRealCase(kind.slice(5), { autoFit });
+    return;
+  }
   const hr = Number($('ex-hr').value) || 68;
   const duration = Number($('ex-dur').value) || 6;
   const noise = (Number($('ex-noise').value) || 0) / 100;
   const seed = Number($('ex-seed').value) || 11;
   $('csv-options').hidden = true;
   if (kind === 'screenshot') {
+    state.pendingAutoFit = autoFit;
     loadExampleScreenshot({ hr, seed });
     return;
   }
@@ -166,7 +188,7 @@ function loadExample(kind) {
   const rrSd = kind === 'irregular' ? 0.15 : 0.03;
   const sim = synthesize({ preset, hr, duration, noise, rrSd, seed });
   const label = `Example: ${PRESETS[preset].label.toLowerCase()}${kind === 'irregular' ? ', irregular rhythm' : ''}, ${hr} bpm, ${duration} s, ${f1(noise * 100)} cm/s noise.`;
-  setTrace(sim.t, sim.v, { kind: 'example', label, name: `example-${kind}`, example: { preset, hr } });
+  setTrace(sim.t, sim.v, { kind: 'example', label, name: `example-${kind}`, example: { preset, hr }, sim }, { autoFit });
 }
 
 function loadExampleScreenshot({ hr, seed }) {
@@ -200,7 +222,7 @@ function loadExampleScreenshot({ hr, seed }) {
   state.window = null;
   state.excludedTimes = [];
   state.hrOverride = null;
-  state.source = { kind: 'image', label: 'Example screenshot: a synthetic spectral display, calibrated from its scale marks.', name: 'example-screenshot', example: { preset, hr } };
+  state.source = { kind: 'image', label: 'Example screenshot: a synthetic spectral display, calibrated from its scale marks.', name: 'example-screenshot', example: { preset, hr }, sim };
   $('source-line').textContent = state.source.label;
   calibrator.setImage({ width: data.width, height: data.height, data: data.data }, null, {
     preset: {
@@ -212,6 +234,62 @@ function loadExampleScreenshot({ hr, seed }) {
       tMarkValue: 1,
     },
   });
+}
+
+// Real published cases, served next to the page by the site build
+// (scripts/build-site.mjs). Absent when the page runs on its own.
+async function loadRealCaseList() {
+  try {
+    const res = await fetch('cases/cases.json', { cache: 'no-cache' });
+    if (!res.ok) return;
+    const { cases } = await res.json();
+    state.realCases = cases;
+    const group = document.createElement('optgroup');
+    group.label = 'Real recordings (published, CC BY)';
+    for (const c of cases) group.appendChild(Object.assign(document.createElement('option'), { value: `real:${c.id}`, textContent: c.menuLabel }));
+    $('example-select').prepend(group);
+  } catch {
+    // Opened from disk or embedded: only the simulated examples are offered.
+  }
+}
+
+async function loadRealCase(id, { autoFit = false } = {}) {
+  const c = state.realCases.find((q) => q.id === id);
+  if (!c) return;
+  if (c.site && SITES.some((q) => q.id === c.site)) {
+    $('site').value = c.site;
+    $('site').dispatchEvent(new Event('change'));
+  }
+  const qc = [{ level: 'info', message: c.calibrationNote }];
+  const label = `${c.label}. ${c.source}`;
+  const res = await fetch(c.file);
+  if (!res.ok) throw new Error(`Could not load ${c.file}`);
+  $('csv-options').hidden = true;
+  if (c.kind === 'csv') {
+    hideCalibration();
+    const table = parseDelimited(await res.text());
+    const tr = tableToTrace(table, { tCol: c.columns.t, vCol: c.columns.v, timeUnit: c.units.time, velUnit: c.units.velocity });
+    setTrace(tr.t, tr.v, { kind: 'real', label, name: c.id }, { qc, autoFit });
+    return;
+  }
+  const bmp = await createImageBitmap(await res.blob());
+  const canvas = document.createElement('canvas');
+  canvas.width = bmp.width;
+  canvas.height = bmp.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bmp, 0, 0);
+  const id2 = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  showCalibration();
+  state.trace = null;
+  state.result = null;
+  state.window = null;
+  state.excludedTimes = [];
+  state.hrOverride = null;
+  state.pendingAutoFit = autoFit;
+  state.source = { kind: 'real', label, name: c.id, qc };
+  $('source-line').textContent = label;
+  renderAll();
+  calibrator.setImage({ width: id2.width, height: id2.height, data: id2.data }, { ...c.calibration, sourceLabel: 'the scanner overlay in the published figure (provisional)' });
 }
 
 async function loadFile(file) {
@@ -358,6 +436,7 @@ function metric(label, valueHtml, sub = [], extra = '', hero = false) {
 
 function renderReadout() {
   const r = state.result;
+  $('run-btn').classList.toggle('ready', Boolean(state.trace) && !r);
   const box = $('metrics');
   const qc = $('qc');
   const buttons = ['copy-btn', 'json-btn', 'csv-btn'].map($);
@@ -366,7 +445,11 @@ function renderReadout() {
     qc.innerHTML = '';
     for (const b of buttons) b.disabled = true;
     $('reset-btn').disabled = true;
-    $('readout-sub').textContent = state.source ? 'Waiting for a calibrated trace.' : 'Load a recording or an example to begin.';
+    $('readout-sub').textContent = state.trace
+      ? 'Recording loaded. Press Run automatic fit.'
+      : state.source
+        ? 'Calibrate the image in step 1 to get a velocity trace.'
+        : 'Load a recording or an example in step 1.';
     return;
   }
   for (const b of buttons) b.disabled = !r.ok;
@@ -890,7 +973,7 @@ const calibrator = createCalibrator(
   {
     onTrace: ({ t, v, qc }) => {
       const src = state.source ?? { kind: 'image', label: 'Image', name: 'image' };
-      setTrace(t, v, src, { qc, keepWindow: Boolean(state.trace) });
+      setTrace(t, v, src, { qc: [...qc, ...(src.qc ?? [])], keepWindow: Boolean(state.trace), autoFit: Boolean(state.result?.ok) });
     },
   }
 );
@@ -947,7 +1030,7 @@ function initLoading() {
       renderPeriodogram();
       renderOC();
     }, 120);
-  }).observe(document.querySelector('.work'));
+  }).observe(document.querySelector('.flow'));
   const scheme = window.matchMedia?.('(prefers-color-scheme: dark)');
   scheme?.addEventListener?.('change', () => calibrator.redraw());
 }
@@ -957,4 +1040,10 @@ initLoading();
 initExport();
 initDrag();
 renderAll();
-loadExample('triphasic');
+loadRealCaseList().then(() => {
+  const preferred = state.realCases.find((c) => c.id === 'anterior_tibial_baseline');
+  if (preferred) {
+    $('example-select').value = `real:${preferred.id}`;
+    loadRealCase(preferred.id, { autoFit: true });
+  } else loadExample('triphasic', { autoFit: true });
+});
