@@ -34,7 +34,7 @@ const siteFor = (file) => (file.includes('tibial') ? 'ata' : file.includes('brac
 for (const p of cal.panels) {
   const name = p.file.split('/').pop();
   copyFileSync(at(p.file), new URL(`cases/${name}`, site));
-  const time = p.evidence.pxPer100ms ? 'time from the 0.1 s timeline marks' : 'time from dotted lines taken as 1 s apart (no heart rate visible to confirm)';
+  const time = p.evidence.pxPer100ms ? 'time from the 0.1 s timeline marks' : 'time from dotted grid lines taken as 1 s apart (no heart rate visible to confirm it)';
   cases.push({
     id: name.replace('.png', ''),
     menuLabel: `${p.label} (image)`,
@@ -45,7 +45,7 @@ for (const p of cal.panels) {
     displayedHr: p.displayedHr_bpm,
     source: `Source: ${p.source.replace(' See figures/README.md.', '')}`,
     calibration: { region: p.region, baselineY: p.baselineY, velPerPx: p.velPerPx, secPerPx: p.secPerPx, tOffset: 0, source: 'figure' },
-    calibrationNote: `Provisional calibration read from the scanner overlay in the published figure (velocity from the cm/s ticks, ${time}). Not a clinical ACCmax value; no expert reference exists for this case.${p.displayedHr_bpm ? ` The scanner shows ${p.displayedHr_bpm} bpm.` : ''}`,
+    calibrationNote: `Calibration read automatically from the scanner overlay in the published figure (velocity from the labelled cm/s ticks, ${time}); provisional, checked against the reference calibration in figures/calibration.json. Not a clinical ACCmax value; no expert reference exists for this case.`,
   });
 }
 cases.unshift({

@@ -99,8 +99,10 @@ export function autoThreshold(stats) {
  * display, diastole with no detectable flow is black.
  *
  * @param {{width:number,height:number,data:Uint8ClampedArray}} img RGBA
- * @param {{region:{x0:number,y0:number,x1:number,y1:number}, baselineY:number, velPerPx:number, secPerPx:number, tOffset?:number}} cal
+ * @param {{region:{x0:number,y0:number,x1:number,y1:number}, baselineY:number, velPerPx:number, secPerPx:number, tOffset?:number, ignoreColumns?:number[][]}} cal
  *   velPerPx: m/s per pixel, positive when velocity increases upwards.
+ *   ignoreColumns: [x0, x1] pixel column ranges covered by overlays (grid
+ *   lines); the envelope is interpolated across them.
  * @param {{threshold?:number|null, minRun?:number, invert?:boolean, ignoreColor?:'auto'|boolean, guardPx?:number}} opts
  *   invert: forward flow is displayed below the baseline.
  * @returns {{t:Float64Array, v:Float64Array, vForward:Float64Array, vReverse:Float64Array, edgeY:Float64Array, edgeReverseY:Float64Array}}
@@ -180,6 +182,23 @@ export function extractEnvelope(img, cal, opts = {}) {
       vDown[c] = (down.edge - baselineY) * Math.abs(velPerPx);
       massDown[c] = down.mass;
       if (down.edge >= bottom - 1) clippedDown++;
+    }
+  }
+  // Columns under an overlay take their values from the nearest clean
+  // columns on either side.
+  for (const [a, b] of cal.ignoreColumns ?? []) {
+    const ca = Math.max(0, a - region.x0);
+    const cb = Math.min(cols - 1, b - region.x0);
+    if (cb < ca) continue;
+    const left = ca - 1;
+    const right = cb + 1;
+    for (let c = ca; c <= cb; c++) {
+      const f = left >= 0 && right < cols ? (c - left) / (right - left) : left >= 0 ? 0 : 1;
+      const from = left >= 0 ? left : right;
+      const to = right < cols ? right : left;
+      for (const arr of [vUp, vDown, massUp, massDown]) arr[c] = (1 - f) * arr[from] + f * arr[to];
+      edgeUp[c] = NaN;
+      edgeDown[c] = NaN;
     }
   }
   // Forward is above the baseline unless the display is inverted (or the

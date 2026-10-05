@@ -98,35 +98,43 @@
     </div>
     <section class="panel" id="calib-panel" aria-labelledby="calib-h" hidden>
       <div class="panel-head">
-        <h3 id="calib-h">Calibrate the image</h3>
-        <p class="calib-status" id="calib-status"></p>
-      </div>
-      <div class="calib-tools">
-        <div class="seg" role="group" aria-label="Calibration tool">
-          <button type="button" class="seg-btn" data-tool="region" aria-pressed="true">Display region</button>
-          <button type="button" class="seg-btn" data-tool="baseline" aria-pressed="false">Baseline</button>
-          <button type="button" class="seg-btn" data-tool="vmark" aria-pressed="false">Velocity mark</button>
-          <button type="button" class="seg-btn" data-tool="tmark" aria-pressed="false">Time marks</button>
+        <div>
+          <h3 id="calib-h">Image calibration</h3>
+          <p class="hint">Read automatically from the image when it opens: the velocity scale and its labels, the baseline, the time marks and the spectral display. Each is drawn on the image and listed below it.</p>
         </div>
-        <div class="calib-fields">
-          <label for="c-vval">Velocity at mark <span class="unit">cm/s</span></label>
-          <input id="c-vval" type="number" step="1" value="60">
-          <label for="c-tval">Time between marks <span class="unit">s</span></label>
-          <input id="c-tval" type="number" step="0.05" min="0" value="1">
-          <label for="c-thr">Envelope threshold <output id="c-thr-out">–</output></label>
-          <div class="inline">
-            <input id="c-thr" type="range" min="1" max="254" value="60">
-            <button type="button" class="btn small" id="c-auto">Auto</button>
+        <p class="calib-status" id="calib-status" aria-live="polite"></p>
+      </div>
+      <div class="calib-canvas-wrap"><canvas id="calib-canvas" width="900" height="360" aria-label="Spectral Doppler image with the calibration found on it"></canvas></div>
+      <ul class="calib-found" id="calib-found" aria-label="What the automatic calibration found" hidden></ul>
+      <details class="calib-adjust" id="calib-adjust">
+        <summary>Adjust the calibration by hand</summary>
+        <div class="calib-tools">
+          <div class="seg" role="group" aria-label="Calibration tool">
+            <button type="button" class="seg-btn" data-tool="region" aria-pressed="true">Display region</button>
+            <button type="button" class="seg-btn" data-tool="baseline" aria-pressed="false">Baseline</button>
+            <button type="button" class="seg-btn" data-tool="vmark" aria-pressed="false">Velocity mark</button>
+            <button type="button" class="seg-btn" data-tool="tmark" aria-pressed="false">Time marks</button>
           </div>
-          <label class="check"><input type="checkbox" id="c-invert"> Flow below the baseline is forward</label>
-          <label class="check"><input type="checkbox" id="c-color" checked> Ignore coloured overlays</label>
-          <span class="frame-field" id="c-frame-field" hidden>
-            <label for="c-frame">Frame</label>
-            <input id="c-frame" type="number" min="1" value="1">
-          </span>
+          <div class="calib-fields">
+            <label for="c-vval">Velocity at mark <span class="unit">cm/s</span></label>
+            <input id="c-vval" type="number" step="any" value="60">
+            <label for="c-tval">Time between marks <span class="unit">s</span></label>
+            <input id="c-tval" type="number" step="any" min="0" value="1">
+            <label for="c-thr">Envelope threshold <output id="c-thr-out">–</output></label>
+            <div class="inline">
+              <input id="c-thr" type="range" min="1" max="254" value="60">
+              <button type="button" class="btn small" id="c-auto">Auto</button>
+            </div>
+            <label class="check"><input type="checkbox" id="c-invert"> Flow below the baseline is forward</label>
+            <label class="check"><input type="checkbox" id="c-color" checked> Ignore coloured overlays</label>
+            <span class="frame-field" id="c-frame-field" hidden>
+              <label for="c-frame">Frame</label>
+              <input id="c-frame" type="number" min="1" value="1">
+            </span>
+          </div>
         </div>
-      </div>
-      <div class="calib-canvas-wrap"><canvas id="calib-canvas" width="900" height="360" aria-label="Spectral Doppler image with calibration marks"></canvas></div>
+        <p class="hint">Pick a tool, then click (or, for the region, drag) on the image. The automatic marks are replaced by yours; the velocity mark and the time marks use the values entered here.</p>
+      </details>
     </section>
   </section>
 

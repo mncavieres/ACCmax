@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
+    "test:e2e": "node scripts/build-site.mjs && node scripts/e2e-upload.mjs",
     "validate": "node scripts/validate-synthetic.mjs",
-    "fit-cases": "node scripts/calibrate-figure-crops.mjs && node scripts/fit-cases.mjs",
+    "fit-cases": "node scripts/calibrate-figure-crops.mjs && node scripts/make-known-displays.mjs && node scripts/fit-cases.mjs",
     "samples": "node scripts/make-samples.mjs",
     "build": "node scripts/build-single-file.mjs",
     "build:site": "node scripts/build-site.mjs",
@@ -17,7 +18,8 @@
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/ibm-plex-sans": "^5.3.0",
     "@fontsource/ibm-plex-sans-condensed": "^5.3.0",
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "playwright": "1.56.1"
   },
   "license": "UNLICENSED"
 }

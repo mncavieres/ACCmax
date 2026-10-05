@@ -182,6 +182,7 @@ export function renderSpectrogram(sim, {
   tOffset = 0,
   wallFilter = 0.025,
   seed = 3,
+  marks = true,
 } = {}) {
   const r = rng(seed);
   const data = new Uint8ClampedArray(width * height * 4);
@@ -209,6 +210,7 @@ export function renderSpectrogram(sim, {
       put(x, y, Math.min(255, Math.round(g)));
     }
   }
+  if (!marks) return { width, height, data, calibration: { region, baselineY, velPerPx, secPerPx, tOffset } };
   // Baseline and velocity ticks every 0.2 m/s on the right edge.
   for (let x = region.x0; x <= region.x1; x += 2) put(x, baselineY, 150);
   for (let k = -5; k <= 10; k++) {
