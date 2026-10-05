@@ -12,6 +12,8 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, rea
 import { FONT_FILES, fontPath, fontFaceCss } from './lib/fonts.mjs';
 
 const root = new URL('../', import.meta.url);
+// The page icon (an inline SVG) from the workbench page, reused on the results page.
+const ICON = readFileSync(new URL('web/index.html', root), 'utf8').match(/<link rel="icon"[^>]*>/)?.[0] ?? '';
 const site = new URL('_site/', root);
 const at = (p) => new URL(p, root);
 
@@ -128,6 +130,7 @@ function resultsPage(src, files) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ACCmax Workbench results</title>
+${ICON}
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../styles.css">
 <style>

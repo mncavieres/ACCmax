@@ -34,14 +34,16 @@ const url = `http://127.0.0.1:${server.address().port}/`;
 
 let browser;
 try {
-  browser = await chromium.launch();
+  browser = await chromium.launch(process.env.E2E_CHANNEL ? { channel: process.env.E2E_CHANNEL } : {});
 } catch {
   browser = await chromium.launch({ channel: 'chrome' });
 }
 const page = await browser.newPage({ viewport: { width: 1300, height: 1000 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+// Failed requests are listed by URL (a console message would not name it).
+page.on('response', (r) => r.status() >= 400 && errors.push(`${r.status()} ${new URL(r.url()).pathname}`));
+page.on('console', (m) => m.type() === 'error' && !m.text().startsWith('Failed to load resource') && errors.push(m.text()));
 
 const failures = [];
 const check = (ok, message) => {
