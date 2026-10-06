@@ -6,6 +6,8 @@ import { measureFromPoints, ONSET_METHODS } from './core/landmarks.js';
 import { synthesize, truthForBeats, renderSpectrogram, PRESETS } from './core/synthetic.js';
 import { parseDelimited, guessUnits, tableToTrace } from './io/csv.js';
 import { parseDicom, ultrasoundRegions, spectralCalibration, decodeFrame, imageInfo } from './io/dicom.js';
+import { autoCalibrate } from './io/autocal.js';
+import { KNOWN_DISPLAYS } from './io/known-displays.js';
 import { createCalibrator } from './ui/calibrate.js';
 import { frame, el, pathD, dotsD, svgPoint, extent } from './ui/plot.js';
 
@@ -118,7 +120,18 @@ function readParams() {
 // ---------- analysis ----------
 let runToken = 0;
 function run() {
-  if (!state.trace) return;
+  if (!state.trace) {
+    // An image still being calibrated fits as soon as its trace is ready;
+    // one that could not be calibrated says what is missing.
+    if (state.source?.kind === 'image' || state.source?.kind === 'dicom' || state.source?.image) {
+      if (calibrator.ready()) state.pendingAutoFit = true;
+      else {
+        state.result = { ok: false, error: `The image is not calibrated yet, so there is no velocity trace to fit. ${calibrator.missing() ?? ''} Use the tools under “Adjust the calibration by hand” in step 1.` };
+        renderAll();
+      }
+    }
+    return;
+  }
   const token = ++runToken;
   document.querySelector('.flow').classList.add('busy');
   setTimeout(() => {
@@ -130,6 +143,12 @@ function run() {
     } catch (err) {
       console.error(err);
       result = { ok: false, error: `The analysis stopped with an error: ${err.message}` };
+    }
+    if (result.ok && state.source?.displayedHr) {
+      // The heart rate printed on the scanner display checks the time scale.
+      const d = result.hr / state.source.displayedHr - 1;
+      const msg = `The scanner shows ${state.source.displayedHr} bpm; the fit finds ${f0(result.hr)} bpm (${d >= 0 ? '+' : ''}${f0(d * 100)}%).`;
+      result.qc = [...result.qc, Math.abs(d) > 0.1 ? { level: 'warn', message: `${msg} The time calibration may be wrong.` } : { level: 'info', message: `${msg} The time calibration agrees.` }];
     }
     state.result = result;
     state.manual = null;
@@ -179,8 +198,7 @@ function loadExample(kind, { autoFit = false } = {}) {
   const seed = Number($('ex-seed').value) || 11;
   $('csv-options').hidden = true;
   if (kind === 'screenshot') {
-    state.pendingAutoFit = autoFit;
-    loadExampleScreenshot({ hr, seed });
+    loadExampleScreenshot({ hr, seed, autoFit });
     return;
   }
   hideCalibration();
@@ -191,49 +209,63 @@ function loadExample(kind, { autoFit = false } = {}) {
   setTrace(sim.t, sim.v, { kind: 'example', label, name: `example-${kind}`, example: { preset, hr }, sim }, { autoFit });
 }
 
-function loadExampleScreenshot({ hr, seed }) {
+function loadExampleScreenshot({ hr, seed, autoFit = false }) {
   const preset = 'biphasic';
   const sim = synthesize({ preset, hr, duration: 5, noise: 0, seed });
   const cal = { region: { x0: 46, y0: 24, x1: 866, y1: 318 }, baselineY: 262, velPerPx: 0.0025, secPerPx: 0.0045 };
-  const img = renderSpectrogram(sim, { width: 920, height: 352, ...cal, seed: seed + 1 });
-  // Add scale labels like a scanner display.
+  const img = renderSpectrogram(sim, { width: 940, height: 372, ...cal, seed: seed + 1 });
+  // A scanner-like overlay: baseline, velocity scale with ticks and labels,
+  // and a timeline (0.1 s marks, taller every 0.5 s, tallest every 1 s).
   const c = document.createElement('canvas');
   c.width = img.width;
   c.height = img.height;
   const ctx = c.getContext('2d');
   ctx.putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
-  ctx.fillStyle = '#d8d8d8';
-  ctx.font = '12px monospace';
+  ctx.fillStyle = '#c8803a';
+  ctx.fillRect(cal.region.x0, cal.baselineY - 1, cal.region.x1 - cal.region.x0 + 1, 3);
+  ctx.fillStyle = '#f2f2f2';
+  ctx.font = 'bold 15px Arial, "Liberation Sans", Helvetica, sans-serif';
   ctx.textBaseline = 'middle';
-  for (let k = -2; k <= 4; k++) {
-    const y = cal.baselineY - (k * 0.2) / cal.velPerPx;
-    if (y < cal.region.y0 || y > cal.region.y1) continue;
-    ctx.fillText(String(k * 20), cal.region.x1 + 14, y);
+  const sx = cal.region.x1 + 12;
+  for (let k = -2; k <= 10; k++) {
+    const y = Math.round(cal.baselineY - (k * 0.1) / cal.velPerPx);
+    if (y < cal.region.y0 - 2 || y > cal.region.y1 + 2) continue;
+    const long = k % 2 === 0;
+    ctx.fillRect(sx, y - 1, long ? 14 : 7, 3);
+    if (long) ctx.fillText(k === 0 ? 'cm/s' : String(k * 10), sx + 20, y + 1);
   }
-  ctx.fillText('cm/s', cal.region.x1 + 10, 12);
-  ctx.textBaseline = 'top';
-  for (let k = 0; k <= 3; k++) ctx.fillText(`${k} s`, cal.region.x0 + k / cal.secPerPx - 6, cal.region.y1 + 14);
+  const ty = cal.region.y1 + 30;
+  for (let k = 0; ; k++) {
+    const x = Math.round(cal.region.x0 + (k * 0.1) / cal.secPerPx);
+    if (x > cal.region.x1) break;
+    const h = k % 10 === 0 ? 12 : k % 5 === 0 ? 8 : 4;
+    ctx.fillRect(x - 1, ty - h, 3, h);
+  }
   ctx.fillStyle = '#e8c547';
+  ctx.font = '12px Arial, "Liberation Sans", Helvetica, sans-serif';
+  ctx.textBaseline = 'top';
   ctx.fillText('PW  PTA  angle 52°', 10, 6);
   const data = ctx.getImageData(0, 0, img.width, img.height);
-  showCalibration();
-  state.trace = null;
-  state.result = null;
-  state.window = null;
-  state.excludedTimes = [];
-  state.hrOverride = null;
-  state.source = { kind: 'image', label: 'Example screenshot: a synthetic spectral display, calibrated from its scale marks.', name: 'example-screenshot', example: { preset, hr }, sim };
-  $('source-line').textContent = state.source.label;
-  calibrator.setImage({ width: data.width, height: data.height, data: data.data }, null, {
-    preset: {
-      region: cal.region,
-      baselineY: cal.baselineY,
-      vMarkY: Math.round(cal.baselineY - 0.6 / cal.velPerPx),
-      vMarkValue: 60,
-      tMarks: [cal.region.x0, Math.round(cal.region.x0 + 1 / cal.secPerPx)],
-      tMarkValue: 1,
-    },
-  });
+  // Marks a user would set, used only if the automatic calibration fails.
+  const fallback = {
+    region: cal.region,
+    baselineY: cal.baselineY,
+    vMarkY: Math.round(cal.baselineY - 0.6 / cal.velPerPx),
+    vMarkValue: 60,
+    tMarks: [cal.region.x0, Math.round(cal.region.x0 + 1 / cal.secPerPx)],
+    tMarkValue: 1,
+  };
+  openImage(
+    { width: data.width, height: data.height, data: data.data },
+    {
+      name: 'example-screenshot',
+      label: 'Example screenshot: a synthetic spectral display with a scanner-style scale and timeline, calibrated automatically.',
+      example: { preset, hr },
+      sim,
+      fallback,
+      autoFit,
+    }
+  );
 }
 
 // Real published cases, served next to the page by the site build
@@ -272,25 +304,64 @@ async function loadRealCase(id, { autoFit = false } = {}) {
     setTrace(tr.t, tr.v, { kind: 'real', label, name: c.id }, { qc, autoFit });
     return;
   }
-  const bmp = await createImageBitmap(await res.blob());
+  // The same path as opening the file yourself: calibrated automatically.
+  openImage(await decodeImage(await res.blob()), { name: c.id, label, kind: 'real', qc, autoFit });
+}
+
+async function decodeImage(blob) {
+  const bmp = await createImageBitmap(blob);
   const canvas = document.createElement('canvas');
   canvas.width = bmp.width;
   canvas.height = bmp.height;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(bmp, 0, 0);
-  const id2 = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return { width: d.width, height: d.height, data: d.data };
+}
+
+/**
+ * Show an image in the calibration panel and calibrate it automatically.
+ * A recognised published example also sets the artery and attribution.
+ */
+function openImage(img, { name, label, kind = 'image', qc = [], autoFit = false, example = null, sim = null, fallback = null }) {
+  $('csv-options').hidden = true;
   showCalibration();
   state.trace = null;
   state.result = null;
+  state.manual = null;
   state.window = null;
   state.excludedTimes = [];
   state.hrOverride = null;
   state.pendingAutoFit = autoFit;
-  state.source = { kind: 'real', label, name: c.id, qc };
-  $('source-line').textContent = label;
-  renderAll();
-  calibrator.setImage({ width: id2.width, height: id2.height, data: id2.data }, { ...c.calibration, sourceLabel: 'the scanner overlay in the published figure (provisional)' });
+  $('calib-status').textContent = 'Calibrating from the image…';
+  $('calib-status').dataset.state = 'todo';
+  $('run-btn').disabled = false;
+  const token = ++openToken;
+  document.querySelector('.flow').classList.add('busy');
+  // Let the page show the busy state before the (short) image analysis.
+  setTimeout(() => {
+    if (token !== openToken) return;
+    let auto = null;
+    try {
+      auto = autoCalibrate(img, { library: KNOWN_DISPLAYS });
+    } catch (err) {
+      console.error(err);
+    }
+    const m = auto?.match;
+    if (m && SITES.some((q) => q.id === m.site) && kind !== 'real') {
+      $('site').value = m.site;
+      $('site').dispatchEvent(new Event('change'));
+    }
+    const recognised = m && kind !== 'real' ? ` Recognised as the published example “${m.label}” (${m.source}).` : '';
+    state.source = { kind, image: true, label: `${label}${recognised}`, name, qc, example, sim, displayedHr: m?.displayedHr ?? null };
+    $('source-line').textContent = state.source.label;
+    document.querySelector('.flow').classList.remove('busy');
+    renderAll();
+    const useFallback = fallback && !auto?.ok;
+    calibrator.setImage(img, null, useFallback ? { preset: fallback } : { auto });
+  }, 16);
 }
+let openToken = 0;
 
 async function loadFile(file) {
   const name = file.name;
@@ -342,21 +413,8 @@ function applyCsv() {
 }
 
 async function loadImage(file) {
-  const bmp = await createImageBitmap(file);
-  const c = document.createElement('canvas');
-  c.width = bmp.width;
-  c.height = bmp.height;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(bmp, 0, 0);
-  const id = ctx.getImageData(0, 0, c.width, c.height);
-  $('csv-options').hidden = true;
-  showCalibration();
-  state.trace = null;
-  state.result = null;
-  state.source = { kind: 'image', label: `${file.name}: ${c.width} × ${c.height} px image. Calibrate it below.`, name: file.name };
-  $('source-line').textContent = state.source.label;
-  renderAll();
-  calibrator.setImage({ width: id.width, height: id.height, data: id.data }, null);
+  const img = await decodeImage(file);
+  openImage(img, { name: file.name, label: `${file.name}: ${img.width} × ${img.height} px image.` });
 }
 
 async function loadDicom(file) {
@@ -370,7 +428,7 @@ async function loadDicom(file) {
   $('csv-options').hidden = true;
   showCalibration();
   const device = [info.manufacturer, info.model].filter(Boolean).join(' ');
-  const calText = cal ? 'calibrated from its ultrasound region' : 'no spectral calibration found, calibrate by hand below';
+  const calText = cal ? 'calibrated from its ultrasound region' : 'no spectral calibration in the file, so calibrated from the image';
   state.trace = null;
   state.result = null;
   state.source = {
@@ -384,7 +442,16 @@ async function loadDicom(file) {
     const im = await decodeFrame(dcm, i);
     calibrator.setImage(im, cal, { frames, frame: i, onFrame, keepMarks: true });
   };
-  calibrator.setImage(img, cal, { frames, frame: frameIndex, onFrame });
+  let auto = null;
+  if (!cal) {
+    try {
+      auto = autoCalibrate(img, { library: KNOWN_DISPLAYS });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  $('run-btn').disabled = false;
+  calibrator.setImage(img, cal, { frames, frame: frameIndex, onFrame, auto });
 }
 
 function showCalibration() {
@@ -448,7 +515,7 @@ function renderReadout() {
     $('readout-sub').textContent = state.trace
       ? 'Recording loaded. Press Run automatic fit.'
       : state.source
-        ? 'Calibrate the image in step 1 to get a velocity trace.'
+        ? 'The image is not fully calibrated yet: see step 1. Run automatic fit says what is missing.'
         : 'Load a recording or an example in step 1.';
     return;
   }
@@ -969,11 +1036,19 @@ const calibrator = createCalibrator(
     frameField: $('c-frame-field'),
     frameInput: $('c-frame'),
     status: $('calib-status'),
+    found: $('calib-found'),
+    adjust: $('calib-adjust'),
   },
   {
-    onTrace: ({ t, v, qc }) => {
+    onTrace: ({ t, v, qc, calibration }) => {
       const src = state.source ?? { kind: 'image', label: 'Image', name: 'image' };
-      setTrace(t, v, src, { qc: [...qc, ...(src.qc ?? [])], keepWindow: Boolean(state.trace), autoFit: Boolean(state.result?.ok) });
+      const scale = `${f2(Math.abs(calibration.velPerPx) * 100)} cm/s and ${f2(calibration.secPerPx * 1000)} ms per pixel`;
+      const how = {
+        auto: `Calibrated automatically from the image (${scale}); step 1 shows what was taken for the scale, baseline and time marks.`,
+        adjusted: `Calibrated from the automatic marks with your adjustments (${scale}).`,
+        manual: `Calibrated by hand (${scale}).`,
+      }[calibration.source] ?? `Calibrated from the DICOM ultrasound region (${scale}).`;
+      setTrace(t, v, src, { qc: [{ level: 'info', message: how }, ...qc, ...(src.qc ?? [])], keepWindow: Boolean(state.trace), autoFit: Boolean(state.result?.ok) });
     },
   }
 );
@@ -1029,6 +1104,7 @@ function initLoading() {
       renderStack();
       renderPeriodogram();
       renderOC();
+      calibrator.redraw();
     }, 120);
   }).observe(document.querySelector('.flow'));
   const scheme = window.matchMedia?.('(prefers-color-scheme: dark)');

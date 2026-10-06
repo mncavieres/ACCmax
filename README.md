@@ -24,7 +24,7 @@ For Claude working on ACCmax extraction, start with the [real data case guide](C
 
 The [`web/`](web/) folder holds a browser tool that measures **ACCmax**, **acceleration time (AT)** and **pedal acceleration time (PAT)** from a spectral Doppler recording. You load a recording, press **Run automatic fit**, and check the result. The software:
 
-1. traces the maximum-velocity envelope (from a DICOM capture, a screenshot, or a CSV), forward and reverse flow both,
+1. calibrates an image automatically from the scanner's own overlay (velocity scale labels, baseline, timeline marks), shows on the image what it took for what, and traces the maximum-velocity envelope, forward and reverse flow both (DICOM captures and CSV files work too),
 2. finds the heart rate with a multi-harmonic Lomb–Scargle periodogram,
 3. finds every systolic upstroke and aligns the beats to each other (per-beat O − C correction),
 4. stacks the aligned beats over the full cardiac cycle to beat down noise, and smooths the stack,
@@ -49,30 +49,43 @@ All processing runs in the browser; files are never uploaded, and the page makes
 
 | Input | Calibration | Notes |
 | --- | --- | --- |
-| DICOM (`.dcm`) | Automatic, from the Sequence of Ultrasound Regions (0018,6011) | Uncompressed or JPEG baseline. Multi-frame: pick the frame. Doppler angle is read for QC. |
-| Screenshot (PNG/JPG) | Manual: draw the display region, click the baseline, one velocity mark and two time marks | Envelope threshold is automatic with a slider override. Coloured overlays are ignored. |
+| DICOM (`.dcm`) | Automatic, from the Sequence of Ultrasound Regions (0018,6011); from the image when the file has none | Uncompressed or JPEG baseline. Multi-frame: pick the frame. Doppler angle is read for QC. |
+| Screenshot (PNG/JPG) | Automatic, from the scanner overlay on the image: velocity scale labels, baseline, timeline marks or dotted grid lines, display region | What was found is drawn on the image and listed. Any mark can be corrected by hand; if something is not found, the panel says what and asks for that mark only. The published example images are also recognised (resized or re-saved too) and checked against their reference calibration. |
 | CSV / TSV / TXT | Columns and units are detected, then editable | Handles `;` separators with decimal commas. A single column needs a sample rate. |
+
+### Automatic image calibration
+
+When an image is opened ([`web/js/io/autocal.js`](web/js/io/autocal.js)), the tool looks for what a person would use to calibrate it by hand, and checks each reading:
+
+- **Velocity scale:** a column of evenly spaced tick marks; the labels next to the long ticks are read with a small template matcher ([`glyphs.js`](web/js/io/glyphs.js)), and must fall on one straight line (a misread label is dropped, and fewer than three usable labels means no automatic velocity scale). The unit is taken from the "cm/s" or "m/s" printed at zero. Labels increasing downwards mean an inverted display.
+- **Baseline:** the long horizontal line at the scale's zero (or the zero itself if no line is drawn).
+- **Time scale:** evenly spaced timeline marks outside the display, with the tallest marks taken as 1 s apart (on these scanners every 10th mark, so 0.1 s per mark); otherwise dotted vertical grid lines, taken as 1 s apart. These conventions are assumptions and are stated in the panel.
+- **Display region:** the extent of the scale, kept clear of the ECG trace, on-screen text, horizontal rules, the timeline and image borders. Grey grid dots (when compression has removed their colour) are bridged in the envelope.
+
+On the six published crops it reproduces the reference calibration in [`figures/calibration.json`](figures/calibration.json) within 0.3% (velocity and time) and 0.5 px (baseline), and still does on copies that are resized (75–130%), JPEG-compressed, padded or cropped. It is tested in `tests/autocal.test.mjs`, and in a real browser by `npm run test:e2e` (upload each example, press Run, check calibration and result). It is built for scanner screens like these; a display with an unusual layout may need some marks set by hand.
 
 ### Reproduce the results
 
 ```bash
-npm run fit-cases                    # calibrate the figure crops, fit every case (results/summary.json)
+npm run fit-cases                    # reference calibration, known-display library, fit every case (results/summary.json)
 pip install -r scripts/requirements.txt
 python3 scripts/plot_checkplots.py   # results/checkplots/*.png and the table in results/README.md
 npm run validate                     # Monte Carlo accuracy check against synthetic ground truth
 npm test                             # unit, end-to-end and real-data regression tests
+npm run test:e2e                     # in a browser: upload each example image, run the fit, check it
 ```
 
 ```
 web/
   index.html, styles.css, js/app.js
   js/core/   lombscargle.js  smooth.js  landmarks.js  pipeline.js  synthetic.js  stats.js
-  js/io/     dicom.js  envelope.js  csv.js
+  js/io/     dicom.js  envelope.js  csv.js  autocal.js  glyphs.js  known-displays.js
   js/ui/     plot.js  calibrate.js
-scripts/     fit-cases.mjs  calibrate-figure-crops.mjs  plot_checkplots.py  validate-synthetic.mjs
+scripts/     fit-cases.mjs  calibrate-figure-crops.mjs  make-known-displays.mjs  make-glyphs.py
+             plot_checkplots.py  validate-synthetic.mjs  e2e-upload.mjs
              build-site.mjs  build-single-file.mjs  make-samples.mjs  lib/
-tests/       core, pipeline, io and real-data tests
-figures/calibration.json   provisional calibration of the figure crops
+tests/       core, pipeline, io, real-data and automatic-calibration tests
+figures/calibration.json   reference calibration of the figure crops (provisional)
 results/                   checkplots and summary
 docs/PLAN.md
 ```

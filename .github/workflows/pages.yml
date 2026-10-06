@@ -31,6 +31,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:site
+      # Open each example image in a browser as a user would, run the fit,
+      # and check the automatic calibration (uses the runner's Chrome).
+      - run: node scripts/e2e-upload.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

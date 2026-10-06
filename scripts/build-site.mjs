@@ -12,6 +12,8 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, rea
 import { FONT_FILES, fontPath, fontFaceCss } from './lib/fonts.mjs';
 
 const root = new URL('../', import.meta.url);
+// The page icon (an inline SVG) from the workbench page, reused on the results page.
+const ICON = readFileSync(new URL('web/index.html', root), 'utf8').match(/<link rel="icon"[^>]*>/)?.[0] ?? '';
 const site = new URL('_site/', root);
 const at = (p) => new URL(p, root);
 
@@ -34,7 +36,7 @@ const siteFor = (file) => (file.includes('tibial') ? 'ata' : file.includes('brac
 for (const p of cal.panels) {
   const name = p.file.split('/').pop();
   copyFileSync(at(p.file), new URL(`cases/${name}`, site));
-  const time = p.evidence.pxPer100ms ? 'time from the 0.1 s timeline marks' : 'time from dotted lines taken as 1 s apart (no heart rate visible to confirm)';
+  const time = p.evidence.pxPer100ms ? 'time from the 0.1 s timeline marks' : 'time from dotted grid lines taken as 1 s apart (no heart rate visible to confirm it)';
   cases.push({
     id: name.replace('.png', ''),
     menuLabel: `${p.label} (image)`,
@@ -45,7 +47,7 @@ for (const p of cal.panels) {
     displayedHr: p.displayedHr_bpm,
     source: `Source: ${p.source.replace(' See figures/README.md.', '')}`,
     calibration: { region: p.region, baselineY: p.baselineY, velPerPx: p.velPerPx, secPerPx: p.secPerPx, tOffset: 0, source: 'figure' },
-    calibrationNote: `Provisional calibration read from the scanner overlay in the published figure (velocity from the cm/s ticks, ${time}). Not a clinical ACCmax value; no expert reference exists for this case.${p.displayedHr_bpm ? ` The scanner shows ${p.displayedHr_bpm} bpm.` : ''}`,
+    calibrationNote: `Calibration read automatically from the scanner overlay in the published figure (velocity from the labelled cm/s ticks, ${time}); provisional, checked against the reference calibration in figures/calibration.json. Not a clinical ACCmax value; no expert reference exists for this case.`,
   });
 }
 cases.unshift({
@@ -128,6 +130,7 @@ function resultsPage(src, files) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ACCmax Workbench results</title>
+${ICON}
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../styles.css">
 <style>

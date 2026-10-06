@@ -9,8 +9,10 @@
 //             of a pulsed-wave recording (approximate calibration)
 //   tibial    four anterior tibial crops from a published figure
 //   brachial  two brachial crops from a published figure (inverted display)
-//             Image crops are traced with the provisional calibration in
-//             figures/calibration.json.
+//             Image crops are calibrated automatically from the scanner
+//             overlay (web/js/io/autocal.js), exactly as the workbench does
+//             when the image is opened, and checked against the reference
+//             calibration in figures/calibration.json.
 // Simulated cases: synthetic waveforms with known true ACCmax and AT.
 //
 // None of the real sources has expert ACCmax labels, and no m/s² value from
@@ -22,7 +24,10 @@ import { analyze, DEFAULT_PARAMS } from '../web/js/core/pipeline.js';
 import { parseDelimited, tableToTrace } from '../web/js/io/csv.js';
 import { extractEnvelope } from '../web/js/io/envelope.js';
 import { synthesize, renderSpectrogram, truthForBeats } from '../web/js/core/synthetic.js';
+import { autoCalibrate } from '../web/js/io/autocal.js';
+import { KNOWN_DISPLAYS } from '../web/js/io/known-displays.js';
 import { decodePng, encodePng } from './lib/png.mjs';
+import { drawScannerOverlay } from './lib/scanner-overlay.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root));
@@ -126,11 +131,48 @@ function addCase(c) {
   });
 }
 
-// --- Real: published figure crops traced with the provisional calibration ---
+// What the automatic calibration found, for the checkplot overlay, and a
+// sentence describing it.
+function autoCalSummary(auto) {
+  const f = auto.found;
+  const r1 = (x) => (Number.isFinite(x) ? Math.round(x * 10) / 10 : null);
+  const used = new Set((f.labels?.points ?? []).map((q) => q.word));
+  return {
+    ok: auto.ok,
+    ticks: (f.scale?.ticks ?? []).map((t) => ({ y: r1(t.y), x0: t.x0, x1: t.x1, long: t.long })),
+    labels: (f.labels?.words ?? []).filter((w) => w.text).map((w) => {
+      const q = (f.labels.points ?? []).find((p) => p.word === w);
+      return { y: r1(w.tick.y), x: w.tick.x0, text: q?.unitLabel ? `0 (${f.labels.unit})` : w.text, used: used.has(w) };
+    }),
+    time: f.time ? { kind: f.time.kind, step_s: f.time.step, spacing_px: r4(f.time.spacing), y: f.time.y ?? null, x: (f.time.marks ?? f.time.lines).map((m) => r1(m.x)), assumption: f.time.assumption } : null,
+    ecg: f.ecg ?? null,
+    text: (f.text ?? []).map((t) => ({ x0: t.x0, y0: t.y0, x1: t.x1, y1: t.y1 })),
+  };
+}
+function autoCalText(auto, ref) {
+  const f = auto.found;
+  const c = auto.calibration;
+  const labels = (f.labels?.points ?? []).map((q) => (q.unitLabel ? '0' : q.word.text)).join(', ');
+  const t = f.time;
+  const time = t ? (t.kind === 'timeline' ? `${t.marks.length} timeline marks ${+(t.step * 1000).toFixed(0)} ms apart` : `${t.lines.length} grid lines 1 s apart`) : 'the reference';
+  let text = `Automatic: ${(Math.abs(c.velPerPx) * 100).toFixed(3)} cm/s per px (labels ${labels}), ${(c.secPerPx * 1000).toFixed(3)} ms per px (${time}).`;
+  if (ref) {
+    const dv = Math.abs(c.velPerPx) / Math.abs(ref.velPerPx) - 1;
+    const dt = c.secPerPx / ref.secPerPx - 1;
+    const pc = (x) => `${x >= 0 ? '+' : ''}${(x * 100).toFixed(1)}%`;
+    text += ` Reference ${pc(dv)} / ${pc(dt)}. Provisional.`;
+  }
+  return text;
+}
+
+// --- Real: published figure crops, calibrated automatically ---
 const cal = JSON.parse(read('figures/calibration.json'));
 for (const p of cal.panels) {
   const img = decodePng(read(p.file));
-  const env = extractEnvelope(img, p); // the calibration's sign says which side is forward
+  const auto = autoCalibrate(img, { library: KNOWN_DISPLAYS });
+  if (!auto.ok) console.log(`    ${p.file}: automatic calibration incomplete (${auto.missing.join(', ')}); using the reference calibration`);
+  const c = auto.ok ? auto.calibration : { region: p.region, baselineY: p.baselineY, velPerPx: p.velPerPx, secPerPx: p.secPerPx, tOffset: 0 };
+  const env = extractEnvelope(img, c); // the calibration's sign says which side is forward
   const qcExtra = [];
   if (env.clippedFraction > 0.01) {
     qcExtra.push({ level: 'info', message: `Forward envelope reaches the edge of the traced region in ${(env.clippedFraction * 100).toFixed(0)}% of columns.` });
@@ -138,8 +180,8 @@ for (const p of cal.panels) {
   const r = analyze(env.t, env.v, { ...params, qcExtra });
   const res = exportResult(r);
   if (res.ok) {
-    res.accmax_display_px_per_px = r4(r.landmarks.accmax / (Math.abs(p.velPerPx) / p.secPerPx));
-    res.at_display_px = r4(r.landmarks.at / p.secPerPx);
+    res.accmax_display_px_per_px = r4(r.landmarks.accmax / (Math.abs(c.velPerPx) / c.secPerPx));
+    res.at_display_px = r4(r.landmarks.at / c.secPerPx);
     // The same recording measured on the forward edge only (reverse flow set to
     // zero), as calipers placed above the baseline would measure it.
     const fwd = analyze(env.t, env.vForward, { ...params, bootstrap: 0 });
@@ -152,9 +194,10 @@ for (const p of cal.panels) {
     title: p.label,
     subtitle: p.subtitle ?? 'Published figure panel, scanner screen capture',
     source: p.source ?? cal.source,
-    calibration: `Provisional, from the scanner overlay: ${p.evidence.pxPerCmS} px per cm/s, ${p.evidence.pxPer100ms ? `${p.evidence.pxPer100ms} px per 0.1 s (timeline marks)` : `${p.evidence.pxPerSecond} px per s (dotted lines taken as 1 s apart)`}. See figures/calibration.json`,
+    calibration: auto.ok ? autoCalText(auto, p) : `Reference (automatic calibration incomplete): ${p.evidence.pxPerCmS} px per cm/s. See figures/calibration.json`,
     displayedHr_bpm: p.displayedHr_bpm,
-    image: { file: p.file, region: p.region, baselineY: p.baselineY, velPerPx: p.velPerPx, secPerPx: p.secPerPx, flowUp: p.flowUp !== false },
+    image: { file: p.file, region: c.region, baselineY: c.baselineY, velPerPx: c.velPerPx, secPerPx: c.secPerPx, flowUp: c.velPerPx > 0 },
+    autocal: autoCalSummary(auto),
     trace: { t_s: arr(env.t), v_m_s: arr(env.v), vForward_m_s: arr(env.vForward), vReverse_m_s: arr(env.vReverse), edgeY: arr(env.edgeY, (y) => (Number.isFinite(y) ? Math.round(y * 10) / 10 : null)), edgeReverseY: arr(env.edgeReverseY, (y) => (Number.isFinite(y) ? Math.round(y * 10) / 10 : null)) },
     envelope: { threshold: env.threshold, clippedFraction: r4(env.clippedFraction) },
     result: res,
@@ -183,14 +226,18 @@ for (const s of sims) {
     result: exportResult(r),
   });
 }
-// A simulated screen capture, measured through the image path.
+// A simulated screen capture with a scanner-style scale and timeline,
+// calibrated automatically and measured through the image path.
 {
   const s = { preset: 'biphasic', hr: 64, duration: 5, noise: 0, seed: 34 };
   const sim = synthesize(s);
-  const calib = { region: { x0: 46, y0: 24, x1: 866, y1: 318 }, baselineY: 262, velPerPx: 0.0025, secPerPx: 0.0045 };
-  const img = renderSpectrogram(sim, { width: 920, height: 352, ...calib, seed: 35 });
+  const truthCal = { region: { x0: 46, y0: 24, x1: 866, y1: 318 }, baselineY: 262, velPerPx: 0.0025, secPerPx: 0.0045 };
+  const img = drawScannerOverlay(renderSpectrogram(sim, { width: 960, height: 372, ...truthCal, seed: 35, marks: false }), truthCal);
   mkdirSync(new URL('results/cases/', root), { recursive: true });
   writeFileSync(new URL('results/cases/sim_screen.png', root), encodePng(img));
+  const auto = autoCalibrate(img);
+  if (!auto.ok) throw new Error(`sim_screen: automatic calibration failed (${auto.missing.join(', ')})`);
+  const calib = auto.calibration;
   const env = extractEnvelope(img, calib);
   const r = analyze(env.t, env.v, params);
   addCase({
@@ -198,11 +245,12 @@ for (const s of sims) {
     kind: 'image',
     group: 'simulated',
     title: 'Simulated spectral display (image path)',
-    subtitle: 'Biphasic, 64 bpm, rendered as a grey-scale spectrum and traced from the image',
+    subtitle: 'Biphasic, 64 bpm, rendered as a scanner display, calibrated automatically from its scale and timeline',
     source: 'Synthetic (web/js/core/synthetic.js); true values known',
-    calibration: 'Exact (synthetic display)',
+    calibration: `${autoCalText(auto, null)} True: 0.250 cm/s and 4.500 ms per px.`,
     ...simTruth(sim, s, r),
     image: { file: 'results/cases/sim_screen.png', region: calib.region, baselineY: calib.baselineY, velPerPx: calib.velPerPx, secPerPx: calib.secPerPx, flowUp: true },
+    autocal: autoCalSummary(auto),
     trace: { t_s: arr(env.t), v_m_s: arr(env.v), vForward_m_s: arr(env.vForward), vReverse_m_s: arr(env.vReverse), edgeY: arr(env.edgeY, (y) => (Number.isFinite(y) ? Math.round(y * 10) / 10 : null)), edgeReverseY: arr(env.edgeReverseY, (y) => (Number.isFinite(y) ? Math.round(y * 10) / 10 : null)) },
     result: exportResult(r),
   });
@@ -213,7 +261,7 @@ for (const c of cases) writeFileSync(new URL(`results/cases/${c.id}.json`, root)
 const summary = {
   generated: new Date().toISOString(),
   settings: { spanMs: params.spanMs, onsetMethod: params.onsetMethod, bandwidthMs: params.bandwidthMs, bandwidthPerAT: params.bandwidthPerAT, minCorr: params.minCorr },
-  note: 'Real cases have no expert ACCmax labels; m/s² values from them are not clinical measurements. Image cases use a provisional calibration.',
+  note: 'Real cases have no expert ACCmax labels; m/s² values from them are not clinical measurements. Image cases are calibrated automatically from the scanner overlay (provisional).',
   cases: cases.map((c) => {
     const r = c.result;
     return {

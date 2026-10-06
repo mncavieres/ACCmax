@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-01T19:23:30.433Z",
+  "generated": "2026-10-05T20:11:33.746Z",
   "settings": {
     "spanMs": 20,
     "onsetMethod": "tangent",
@@ -7,7 +7,7 @@
     "bandwidthPerAT": 0.15,
     "minCorr": 0.85
   },
-  "note": "Real cases have no expert ACCmax labels; m/s² values from them are not clinical measurements. Image cases use a provisional calibration.",
+  "note": "Real cases have no expert ACCmax labels; m/s² values from them are not clinical measurements. Image cases are calibrated automatically from the scanner overlay (provisional).",
   "cases": [
     {
       "id": "finger",
@@ -39,23 +39,23 @@
       "id": "anterior_tibial_baseline",
       "group": "real",
       "title": "Anterior tibial artery, baseline",
-      "calibration": "Provisional, from the scanner overlay: 3.57 px per cm/s, 39.066 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "calibration": "Automatic: 0.280 cm/s per px (labels 60, 40, 20, 0, -20), 2.561 ms per px (35 timeline marks 100 ms apart). Reference -0.0% / +0.0%. Provisional.",
       "ok": true,
-      "hr_bpm": 57.3151,
+      "hr_bpm": 57.2931,
       "displayedHr_bpm": 58,
       "beats": "3/4",
-      "accmax_m_s2": 6.1561,
+      "accmax_m_s2": 6.1541,
       "accmax68": [
-        5.7863,
-        6.6085
+        5.7836,
+        6.596
       ],
-      "at_ms": 116.0656,
+      "at_ms": 115.9019,
       "at68_ms": [
-        112.6356,
-        118.3918
+        112.6486,
+        118.3303
       ],
-      "psv_cm_s": 57.3267,
-      "accmax_display_px_per_px": 5.6257,
+      "psv_cm_s": 57.1823,
+      "accmax_display_px_per_px": 5.6285,
       "truth": null,
       "qc": []
     },
@@ -63,23 +63,23 @@
       "id": "anterior_tibial_eecp_1",
       "group": "real",
       "title": "Anterior tibial artery, EECP-1",
-      "calibration": "Provisional, from the scanner overlay: 2.6375 px per cm/s, 41.144 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "calibration": "Automatic: 0.379 cm/s per px (labels 40, 0, -40), 2.430 ms per px (32 timeline marks 100 ms apart). Reference +0.0% / -0.0%. Provisional.",
       "ok": true,
-      "hr_bpm": 60.0091,
+      "hr_bpm": 60.0177,
       "displayedHr_bpm": 63,
       "beats": "3/4",
-      "accmax_m_s2": 31.28,
+      "accmax_m_s2": 31.3217,
       "accmax68": [
-        30.4009,
-        32.1099
+        30.4449,
+        32.1643
       ],
-      "at_ms": 87.331,
+      "at_ms": 87.4628,
       "at68_ms": [
-        85.8466,
-        90.9335
+        84.4771,
+        91.0836
       ],
-      "psv_cm_s": 68.0512,
-      "accmax_display_px_per_px": 20.052,
+      "psv_cm_s": 68.075,
+      "accmax_display_px_per_px": 20.072,
       "truth": null,
       "qc": []
     },
@@ -87,17 +87,17 @@
       "id": "anterior_tibial_eecp_2",
       "group": "real",
       "title": "Anterior tibial artery, EECP-2",
-      "calibration": "Provisional, from the scanner overlay: 1.9167 px per cm/s, 41.584 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "calibration": "Automatic: 0.523 cm/s per px (labels 60, 0, -60), 2.406 ms per px (29 timeline marks 100 ms apart). Reference +0.2% / +0.0%. Provisional.",
       "ok": true,
-      "hr_bpm": 58.6723,
+      "hr_bpm": 58.7153,
       "displayedHr_bpm": 61,
       "beats": "2/4",
-      "accmax_m_s2": 34.2772,
+      "accmax_m_s2": 34.4545,
       "accmax68": null,
-      "at_ms": 81.8684,
+      "at_ms": 83.1768,
       "at68_ms": null,
-      "psv_cm_s": 77.8715,
-      "accmax_display_px_per_px": 15.7988,
+      "psv_cm_s": 77.7771,
+      "accmax_display_px_per_px": 15.8511,
       "truth": null,
       "qc": [
         "warn: Only 2 beats stacked. Uncertainty cannot be estimated; record more cardiac cycles if possible."
@@ -107,17 +107,17 @@
       "id": "anterior_tibial_eecp_3",
       "group": "real",
       "title": "Anterior tibial artery, EECP-3",
-      "calibration": "Provisional, from the scanner overlay: 1.9633 px per cm/s, 42.627 px per 0.1 s (timeline marks). See figures/calibration.json",
+      "calibration": "Automatic: 0.510 cm/s per px (labels 120, 60, 0, -60), 2.345 ms per px (30 timeline marks 100 ms apart). Reference +0.1% / -0.0%. Provisional.",
       "ok": true,
-      "hr_bpm": 59.699,
+      "hr_bpm": 59.7601,
       "displayedHr_bpm": 63,
       "beats": "2/4",
-      "accmax_m_s2": 52.9319,
+      "accmax_m_s2": 53.0692,
       "accmax68": null,
-      "at_ms": 57.1535,
+      "at_ms": 56.8731,
       "at68_ms": null,
-      "psv_cm_s": 122.2072,
-      "accmax_display_px_per_px": 24.3793,
+      "psv_cm_s": 122.3662,
+      "accmax_display_px_per_px": 24.4049,
       "truth": null,
       "qc": [
         "warn: Only 2 beats stacked. Uncertainty cannot be estimated; record more cardiac cycles if possible."
@@ -127,23 +127,23 @@
       "id": "brachial_before_eecp",
       "group": "real",
       "title": "Brachial artery, before EECP",
-      "calibration": "Provisional, from the scanner overlay: 1.1689 px per cm/s, 171.45 px per s (dotted lines taken as 1 s apart). See figures/calibration.json",
+      "calibration": "Automatic: 0.855 cm/s per px (labels -40, 0, 40, 80, 120, 160), 5.834 ms per px (4 grid lines 1 s apart). Reference -0.1% / +0.0%. Provisional.",
       "ok": true,
-      "hr_bpm": 68.802,
+      "hr_bpm": 68.7814,
       "displayedHr_bpm": null,
       "beats": "5/5",
-      "accmax_m_s2": 22.0878,
+      "accmax_m_s2": 22.0667,
       "accmax68": [
-        21.3141,
-        22.9506
+        21.2973,
+        22.929
       ],
-      "at_ms": 75.4869,
+      "at_ms": 75.5049,
       "at68_ms": [
-        74.7417,
-        76.4364
+        74.665,
+        76.3978
       ],
-      "psv_cm_s": 117.9598,
-      "accmax_display_px_per_px": 15.059,
+      "psv_cm_s": 117.863,
+      "accmax_display_px_per_px": 15.0611,
       "truth": null,
       "qc": []
     },
@@ -151,23 +151,23 @@
       "id": "brachial_during_eecp",
       "group": "real",
       "title": "Brachial artery, during EECP",
-      "calibration": "Provisional, from the scanner overlay: 1.1657 px per cm/s, 173.09 px per s (dotted lines taken as 1 s apart). See figures/calibration.json",
+      "calibration": "Automatic: 0.858 cm/s per px (labels -40, 0, 40, 80, 120, 160), 5.779 ms per px (4 grid lines 1 s apart). Reference +0.1% / +0.0%. Provisional.",
       "ok": true,
-      "hr_bpm": 75.6015,
+      "hr_bpm": 74.3037,
       "displayedHr_bpm": null,
-      "beats": "6/6",
-      "accmax_m_s2": 23.4097,
+      "beats": "5/6",
+      "accmax_m_s2": 24.1809,
       "accmax68": [
-        22.0365,
-        24.6779
+        22.5314,
+        25.5663
       ],
-      "at_ms": 95.7489,
+      "at_ms": 95.3758,
       "at68_ms": [
-        94.5482,
-        97.6819
+        93.518,
+        97.5995
       ],
-      "psv_cm_s": 119.5766,
-      "accmax_display_px_per_px": 15.7658,
+      "psv_cm_s": 121.6858,
+      "accmax_display_px_per_px": 16.2793,
       "truth": null,
       "qc": []
     },
@@ -259,22 +259,22 @@
       "id": "sim_screen",
       "group": "simulated",
       "title": "Simulated spectral display (image path)",
-      "calibration": "Exact (synthetic display)",
+      "calibration": "Automatic: 0.250 cm/s per px (labels 60, 40, 20, 0), 4.499 ms per px (37 timeline marks 100 ms apart). True: 0.250 cm/s and 4.500 ms per px.",
       "ok": true,
-      "hr_bpm": 64.1299,
+      "hr_bpm": 64.1373,
       "displayedHr_bpm": null,
       "beats": "3/5",
-      "accmax_m_s2": 4.3946,
+      "accmax_m_s2": 4.3905,
       "accmax68": [
-        3.9793,
-        4.9081
+        3.9746,
+        4.9053
       ],
-      "at_ms": 105.102,
+      "at_ms": 105.1951,
       "at68_ms": [
-        104.7911,
-        105.2931
+        104.9223,
+        105.8497
       ],
-      "psv_cm_s": 34.0191,
+      "psv_cm_s": 34.0197,
       "accmax_display_px_per_px": null,
       "truth": {
         "accmax_m_s2": 4.366,

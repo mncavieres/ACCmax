@@ -91,6 +91,7 @@ def panel_data(ax, case: dict) -> None:
         ax.plot(xs, rev, color="#43b8cc", lw=0.9, alpha=0.9, label="reverse-flow edge")
         ax.plot(xs, fwd, color="#ffb000", lw=1.3, label="forward envelope (measured)")
         ax.axhline(im["baselineY"], color=ACCENT, lw=0.8, alpha=0.8)
+        draw_autocal(ax, case.get("autocal"), reg)
         for b in beats:
             x = reg["x0"] + b["upstroke_s"] / im["secPerPx"]
             ax.plot([x], [reg["y0"] + 4], marker="v", ms=8, color=beat_color(b, n_in), mec="white", mew=1)
@@ -101,8 +102,8 @@ def panel_data(ax, case: dict) -> None:
         ax.set_ylim(img.shape[0], 0)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.legend(loc="lower right", fontsize=8, framealpha=0.85)
-        ax.set_title("A  Spectral display with the traced envelope and detected upstrokes (▼)")
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.01), ncol=4, fontsize=8, frameon=False)
+        ax.set_title("A  Spectral display: automatic calibration, traced envelope and detected upstrokes (▼)" if case.get("autocal") else "A  Spectral display with the traced envelope and detected upstrokes (▼)")
     else:
         t = np.array(case["trace"]["t_s"], float)
         v = np.array(case["trace"]["v_m_s"], float) * 100
@@ -115,6 +116,31 @@ def panel_data(ax, case: dict) -> None:
         ax.set_xlabel("time (s)")
         ax.set_ylabel("velocity (cm/s)")
         ax.set_title("A  Velocity envelope with the detected upstrokes (▼)")
+
+
+SCALE = "#ffd166"
+TIME = "#ff8fb1"
+IGNORED = "#8aa0ab"
+
+
+def draw_autocal(ax, auto: dict | None, reg: dict) -> None:
+    """What the automatic calibration took for the scale, time marks and overlays."""
+    if not auto:
+        return
+    for t in auto["ticks"]:
+        ax.add_patch(plt.Circle(((t["x0"] + t["x1"]) / 2, t["y"]), max(4.0, (t["x1"] - t["x0"]) / 2 + 2), fill=False, ec=SCALE, lw=0.9))
+    for lab in auto["labels"]:
+        ax.text(lab["x"] - 8, lab["y"], lab["text"] if lab["used"] else f"{lab['text']}?", color=SCALE if lab["used"] else IGNORED, fontsize=7.5, fontweight="bold", ha="right", va="center", bbox=dict(boxstyle="round,pad=0.15", fc="black", ec="none", alpha=0.75))
+    t = auto.get("time")
+    if t and t["kind"] == "timeline":
+        ax.plot(t["x"], [t["y"] - 14] * len(t["x"]), ls="none", marker="v", ms=4, color=TIME, label=f"time marks ({t['step_s'] * 1000:.0f} ms apart)")
+    elif t:
+        for i, x in enumerate(t["x"]):
+            ax.axvline(x, color=TIME, lw=0.9, ls=":", label="time grid lines (1 s apart)" if i == 0 else None)
+    if auto.get("ecg"):
+        e = auto["ecg"]
+        ax.add_patch(plt.Rectangle((e["x0"], e["y0"]), e["x1"] - e["x0"], e["y1"] - e["y0"], fill=False, ec=IGNORED, lw=0.9, ls="--"))
+    ax.plot([], [], ls="none", marker="o", mfc="none", mec=SCALE, label="scale ticks and labels read")
 
 
 def panel_stack(ax, case: dict) -> None:

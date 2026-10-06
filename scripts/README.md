@@ -19,8 +19,11 @@ To regenerate the six [published figure crops](../figures/README.md) and their o
 
 These support the browser tool in [`web/`](../web/) and need Node 20 or newer (`npm install` first):
 
-- `node scripts/calibrate-figure-crops.mjs` reads a provisional pixel → velocity and pixel → time calibration from the scanner overlay printed in each published figure crop (labelled velocity ticks; timeline marks or dotted time lines) and writes [`figures/calibration.json`](../figures/calibration.json).
-- `node scripts/fit-cases.mjs` fits every real case (finger envelope, tibial and brachial crops) and a few simulations with known truth, and writes `results/summary.json` plus per-case plot data in `results/cases/` (not tracked). `npm run fit-cases` runs both steps.
+- `node scripts/calibrate-figure-crops.mjs` reads a provisional pixel → velocity and pixel → time calibration from the scanner overlay printed in each published figure crop (labelled velocity ticks, with the label values typed in by eye; timeline marks or dotted time lines) and writes [`figures/calibration.json`](../figures/calibration.json). This is the reference the automatic calibration (`web/js/io/autocal.js`) is checked against.
+- `node scripts/make-known-displays.mjs` writes `web/js/io/known-displays.js`: thumbnails of the published crops so the workbench recognises them, with their source, artery, printed heart rate and reference calibration.
+- `python3 scripts/make-glyphs.py` writes `web/js/io/glyphs.js`, the reference characters for reading the velocity scale labels (Liberation Sans and DejaVu Sans, both freely licensed).
+- `node scripts/e2e-upload.mjs` (`npm run test:e2e`) opens each example image in a browser as a user would, runs the fit, and checks the automatic calibration and the result.
+- `node scripts/fit-cases.mjs` fits every real case (finger envelope, tibial and brachial crops) and a few simulations with known truth, and writes `results/summary.json` plus per-case plot data in `results/cases/` (not tracked). Image cases are calibrated automatically, as in the workbench. `npm run fit-cases` runs the reference calibration, the known-display library and the fits in turn.
 - `python3 scripts/plot_checkplots.py` draws one checkplot per case and an overview in `results/checkplots/`, and refreshes the table in `results/README.md`.
 - `npm run validate` runs [`validate-synthetic.mjs`](validate-synthetic.mjs), a Monte Carlo comparison of the automated measurement against synthetic waveforms with known ACCmax and AT.
 - `npm run build:site` assembles the website in `_site/` (tool, self-hosted fonts, real cases, results page); `npm run serve` builds and serves it.
